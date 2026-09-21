@@ -37,7 +37,19 @@ export function Live2DCanvas({
     handleRef,
     () => ({
       setExpression(mood: Mood) {
-        modelRef.current?.expression?.(MOOD_TO_EXPRESSION[mood]);
+        const model = modelRef.current;
+        if (!model) return;
+        // Cubism expressions crossfade by weight rather than hard-swapping:
+        // the outgoing one fades out over its own FadeOutTime while the
+        // incoming one fades in, both applied every frame in the meantime.
+        // Clearing the queue first — instead of letting `expression()` push
+        // the next one on top of whatever's still fading out — guarantees
+        // only ever one expression is blending at a time, so switching back
+        // to a mood already seen this session can never end up reading as
+        // "stuck" on whichever one had the larger parameter deltas.
+        const expressionManager = model.internalModel?.motionManager?.expressionManager;
+        expressionManager?.stopAllExpressions?.();
+        model.expression?.(MOOD_TO_EXPRESSION[mood]);
       },
       async speak(audio) {
         await playWithLipSync(audio, audioCtxRef, modelRef);
@@ -164,6 +176,11 @@ type Live2DModelLike = {
   internalModel?: {
     coreModel?: {
       setParameterValueById?: (id: string, value: number) => void;
+    };
+    motionManager?: {
+      expressionManager?: {
+        stopAllExpressions?: () => void;
+      };
     };
   };
 };

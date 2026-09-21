@@ -73,6 +73,10 @@
 				"File": "expressions/exp_sleep.exp3.json"
 			},
 			{
+				"Name": "exp_relaxed",
+				"File": "expressions/exp_relaxed.exp3.json"
+			},
+			{
 				"Name": "exp_smile",
 				"File": "expressions/exp_smile.exp3.json"
 			},

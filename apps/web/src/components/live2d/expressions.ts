@@ -15,7 +15,13 @@ export const MOOD_TO_EXPRESSION: Record<Mood, string> = {
   happy: 'exp_smile',
   focused: 'exp_03',
   alert: 'exp_surprise',
-  relaxed: 'exp_sleep',
+  // Not `exp_sleep`: that file selects the same `ParamEyeType4` eye shape as
+  // `exp_03` (focused), so the two ended up looking almost identical —
+  // `exp_relaxed` is a small custom expression added alongside the asset
+  // (apps/web/public/live2d/zundamon/expressions/exp_relaxed.exp3.json)
+  // that softens the brows and half-closes the eyes without touching any
+  // eye-shape toggle another mood already uses.
+  relaxed: 'exp_relaxed',
 };
 
 export const MOOD_LABEL: Record<Mood, string> = {

@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { PodIcon } from '@/components/icons';
 import { CardHead, Pill, cx } from '@/components/ui';
@@ -31,7 +31,20 @@ export function Live2DStage() {
   const ready = status === 'ready';
   const noWebGL = status === 'unsupported' || status === 'failed';
 
+  // The model boots with no expression applied at all — `mood` defaults to
+  // 'relaxed' as a UI label, but nothing has told the model to actually show
+  // it yet. Apply it for real the moment the stage is ready, once.
+  useEffect(() => {
+    if (ready) handle.current?.setExpression(mood);
+    // Only ever meant to fire on the ready transition, not on every mood change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
   const pick = (next: Mood) => {
+    // Re-clicking the mood that's already showing would still clear and
+    // re-push the same expression (see Live2DCanvas's `setExpression`) —
+    // harmless, but skip the no-op work.
+    if (next === mood) return;
     setMood(next);
     handle.current?.setExpression(next);
   };
