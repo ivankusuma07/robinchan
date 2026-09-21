@@ -196,14 +196,31 @@ type Live2DModelLike = {
 };
 
 /**
- * The Zundamon model is drawn full-body. The stage canvas is only 400px, so
- * scale is pinned to height and the anchor point shifted upward so her face
- * shows, not her shoes.
+ * The Zundamon model is drawn full-body. The stage canvas is a fixed 400px
+ * tall, so scale is primarily pinned to height and the anchor point shifted
+ * upward so her face shows, not her shoes.
+ *
+ * That height-only scale assumes a wide canvas (736px on desktop). Below
+ * 1280px, `grid-stage` collapses to one column and the card's width drops to
+ * the viewport width while its height stays 400px — the same height-based
+ * scale then renders her at desktop size inside a much narrower frame, and
+ * the card's `overflow-hidden` crops her into an oversized, zoomed-in mess
+ * instead of letting her overflow visibly. Capping the rendered width to fit
+ * the canvas (with a little breathing room) catches that: width becomes the
+ * binding constraint on narrow screens, height stays the constraint on wide
+ * ones, exactly like `object-fit: contain` would if we could use it on a
+ * WebGL canvas.
  */
 function fit(model: Live2DModelLike, app: PixiAppLike): void {
   const { width, height } = app.screen;
   if (!model.width || !model.height) return;
-  const scale = (height / model.height) * 1.55;
+
+  let scale = (height / model.height) * 1.55;
+  const maxRenderedWidth = width * 0.92;
+  if (model.width * scale > maxRenderedWidth) {
+    scale = maxRenderedWidth / model.width;
+  }
+
   model.scale.set(scale);
   model.anchor?.set(0.5, 0.5);
   model.position.set(width / 2, height * 0.62);
