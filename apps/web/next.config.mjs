@@ -62,9 +62,20 @@ const nextConfig = {
         ],
       },
       {
-        // Model assets never change without a filename change.
-        source: '/live2d/:path*',
+        // Only the large binary assets are genuinely immutable. The moc3
+        // rig and its texture atlas never change without a filename bump.
+        source: '/live2d/:path*.(moc3|png)',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        // The JSON config files (model3.json, expressions, motions) get
+        // edited in place — e.g. adding a new expression — so they must
+        // revalidate instead of being cached for a year. A stale cached
+        // model3.json missing a newly-added expression name makes
+        // pixi-live2d-display's `model.expression(name)` silently no-op,
+        // which looks exactly like "the expression is stuck".
+        source: '/live2d/:path*.json',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }],
       },
     ];
   },
