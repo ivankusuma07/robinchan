@@ -16,8 +16,12 @@ const CUBISM_ORIGIN = 'https://cubism.live2d.com';
 // Strict CSP; `frame-src` limited to the video embed domains actually used (brief §15).
 const csp = [
   "default-src 'self'",
-  // Next injects an inline bootstrap script, and Cubism Core executes WASM.
-  // Full `unsafe-eval` is only for the dev server — production only needs WASM.
+  // Next injects an inline bootstrap script, and Cubism Core executes WASM
+  // (needs `wasm-unsafe-eval`, not full `unsafe-eval`). Full `unsafe-eval`
+  // is only for the dev server's own tooling — PixiJS's renderer also wants
+  // `new Function(...)` for its uniform-sync codegen, but that's handled
+  // without weakening CSP via `@pixi/unsafe-eval` in Live2DCanvas.tsx,
+  // which patches PixiJS to skip that codegen instead.
   `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : "'wasm-unsafe-eval'"} ${CUBISM_ORIGIN}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://i.ytimg.com",
