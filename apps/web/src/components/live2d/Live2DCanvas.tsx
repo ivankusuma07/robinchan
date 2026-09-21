@@ -79,6 +79,16 @@ export function Live2DCanvas({
         const PIXI = await import('pixi.js');
         const { Live2DModel } = await import('pixi-live2d-display/cubism4');
 
+        // PixiJS's ShaderSystem code-generates its uniform-sync functions via
+        // `new Function(...)` for speed, and throws in its constructor if
+        // that's blocked — which our CSP does in production (brief §15: no
+        // `unsafe-eval`). `@pixi/unsafe-eval` is PixiJS's own patch for
+        // exactly this: it swaps that codegen for a slower but CSP-safe
+        // fallback path. Must run before the `Application`/`Renderer` is
+        // constructed, since that's what wires up `ShaderSystem`.
+        const { install: installUnsafeEvalPatch } = await import('@pixi/unsafe-eval');
+        installUnsafeEvalPatch({ ShaderSystem: PIXI.ShaderSystem });
+
         // pixi-live2d-display uses PIXI's global ticker to auto-update.
         Live2DModel.registerTicker(PIXI.Ticker);
 

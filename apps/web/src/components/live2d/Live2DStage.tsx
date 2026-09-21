@@ -76,7 +76,9 @@ export function Live2DStage() {
         <div className="mb-3 flex items-center justify-between gap-3">
           <span className="t-eyebrow">Expression</span>
           {noWebGL ? (
-            <span className="font-mono text-[11px] text-text-3">WebGL unavailable</span>
+            <span className="font-mono text-[11px] text-text-3">
+              {status === 'unsupported' ? 'WebGL unavailable' : 'Model unavailable'}
+            </span>
           ) : null}
         </div>
 
