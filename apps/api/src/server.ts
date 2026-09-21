@@ -18,7 +18,10 @@ const { heatRoutes } = await import('./routes/heat.js');
 const { sourcesRoutes } = await import('./routes/sources.js');
 const { healthRoutes } = await import('./routes/health.js');
 
-const PORT = Number(process.env.API_PORT ?? 4000);
+// `PORT` is the convention most PaaS hosts (Railway, Render, Heroku) inject
+// automatically for a service with a public domain; `API_PORT` is our own
+// override for local dev and anywhere that convention doesn't apply.
+const PORT = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
 const HOST = process.env.API_HOST ?? '0.0.0.0';
 
 const app = Fastify({
