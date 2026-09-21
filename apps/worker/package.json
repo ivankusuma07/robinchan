@@ -1,0 +1,21 @@
+{
+  "name": "@robinchan/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "once": "tsx src/index.ts --once",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@robinchan/shared": "*",
+    "@robinchan/store": "*",
+    "dotenv": "^17.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "tsx": "^4.20.6"
+  }
+}
