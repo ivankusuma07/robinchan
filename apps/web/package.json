@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@pixi/unsafe-eval": "^6.5.10",
     "@robinchan/shared": "*",
     "lucide-react": "^0.545.0",
     "next": "15.5.25",
