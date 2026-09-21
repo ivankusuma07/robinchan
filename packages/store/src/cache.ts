@@ -95,7 +95,12 @@ class RedisCache implements Cache {
 
   async get<T>(key: string): Promise<T | null> {
     const raw = await this.redis.get(key);
-    return raw ? (JSON.parse(raw) as T) : null;
+    if (raw == null) return null;
+    // `set()` wraps the value as `{ v, writtenAt }` (see `getWithAge`) —
+    // unwrap it here too, or callers get the envelope back typed as their
+    // actual value, and every field silently reads as `undefined`.
+    const parsed = JSON.parse(raw) as { v: T; writtenAt: number };
+    return parsed.v;
   }
 
   async getWithAge<T>(key: string): Promise<{ value: T; ageSec: number } | null> {

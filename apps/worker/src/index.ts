@@ -20,7 +20,13 @@ type Job = {
 };
 
 const JOBS: Job[] = [
-  { name: 'prices', everyMs: 10_000, run: runPrices },
+  // Brief §8 specifies 10s, but Finnhub's free tier has no batch quote
+  // endpoint — one run fetches ~12 symbols individually (WATCHED_SYMBOLS +
+  // INDEX_SYMBOLS), and at 10s that's ~72 req/min against a 60 req/min cap.
+  // 20s keeps it at ~36 req/min with headroom for the news/calendar jobs'
+  // occasional Finnhub calls too. This is exactly the check brief §11 asks
+  // devs to do themselves before relying on an interval.
+  { name: 'prices', everyMs: 20_000, run: runPrices },
   { name: 'news', everyMs: 60_000, run: runNews },
   { name: 'heat', everyMs: 5 * 60_000, run: runHeat },
   { name: 'channels', everyMs: 10 * 60_000, run: runChannels },
