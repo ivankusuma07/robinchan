@@ -7,9 +7,12 @@ import {
   ExternalLink,
   Flame,
   Home,
+  KeyRound,
+  LayoutGrid,
   LineChart,
   Lock,
   Menu,
+  MessageSquareText,
   X,
   type LucideProps,
 } from 'lucide-react';
@@ -42,3 +45,8 @@ export const ArrowRightIcon = wrap(ArrowRight, 16);
 export const LockIcon = wrap(Lock, 14);
 export const WaveformIcon = wrap(AudioLines, 16);
 export const ExternalIcon = wrap(ExternalLink, 14);
+
+// Home feature-card glyphs (design.md §10) — not used in the dashboard.
+export const GridIcon = wrap(LayoutGrid, 20);
+export const ChatIcon = wrap(MessageSquareText, 20);
+export const KeyIcon = wrap(KeyRound, 20);

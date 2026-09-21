@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Instrument_Sans, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 
-import { AppShell } from '@/components/shell/AppShell';
-
 import './globals.css';
 
 const display = Space_Grotesk({
@@ -56,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
-        <AppShell>{children}</AppShell>
+        {children}
       </body>
     </html>
   );

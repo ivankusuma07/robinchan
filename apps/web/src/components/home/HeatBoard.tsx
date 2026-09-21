@@ -5,6 +5,7 @@ import { POLL_MS, WATCHED_SYMBOLS } from '@robinchan/shared';
 
 import { CardHead, StaleBadge, cx } from '@/components/ui';
 import { isUnset } from '@/lib/api';
+import { useReveal } from '@/lib/useReveal';
 import { usePoll } from '@/lib/usePoll';
 
 /**
@@ -17,9 +18,10 @@ import { usePoll } from '@/lib/usePoll';
 export function HeatBoard({ initial }: { initial: ApiEnvelope<HeatScore[]> }) {
   const envelope = usePoll<HeatScore[]>('/api/heat?limit=5', initial, POLL_MS.heat);
   const rows = envelope.data;
+  const [ref, visible] = useReveal<HTMLElement>();
 
   return (
-    <section className="card flex flex-col">
+    <section ref={ref} className="card flex flex-col">
       <CardHead
         title="Heat board"
         aside={
@@ -37,7 +39,9 @@ export function HeatBoard({ initial }: { initial: ApiEnvelope<HeatScore[]> }) {
             ))
           : rows
               .slice(0, 5)
-              .map((row) => <HeatRow key={row.symbol} row={row} stale={envelope.stale} />)}
+              .map((row, i) => (
+                <HeatRow key={row.symbol} row={row} stale={envelope.stale} grow={visible} delayMs={i * 60} />
+              ))}
       </div>
 
       <p className="border-t border-border-soft px-5 py-3.5 text-[12px] leading-relaxed text-text-3">
@@ -47,13 +51,23 @@ export function HeatBoard({ initial }: { initial: ApiEnvelope<HeatScore[]> }) {
   );
 }
 
-function HeatRow({ row, stale }: { row: HeatScore; stale: boolean }) {
+function HeatRow({
+  row,
+  stale,
+  grow,
+  delayMs,
+}: {
+  row: HeatScore;
+  stale: boolean;
+  grow: boolean;
+  delayMs: number;
+}) {
   return (
     <div className={cx('flex items-center gap-4 px-5 py-3', stale && 'is-stale')}>
       <div className="w-[68px] shrink-0">
         <p className="font-mono text-[13px] tracking-[0.04em]">{row.symbol}</p>
       </div>
-      <HeatBar score={row.score} />
+      <HeatBar score={row.score} grow={grow} delayMs={delayMs} />
       <span className="w-[34px] shrink-0 text-right font-mono text-[13px]">{row.score}</span>
     </div>
   );
@@ -74,8 +88,12 @@ function HeatRowEmpty({ symbol }: { symbol: string }) {
 /**
  * The bar uses a gradient keyed to score tier, not a flat color (design.md §4).
  * High scores shift toward `down` — "hot" doesn't always mean good.
+ *
+ * On Home, bars grow in from 0 once the card scrolls into view (design.md
+ * §10) rather than appearing pre-filled — on `/market` this same component
+ * would just show `grow` true immediately, no animation needed there.
  */
-function HeatBar({ score }: { score: number }) {
+function HeatBar({ score, grow, delayMs }: { score: number; grow: boolean; delayMs: number }) {
   const pct = Math.max(3, Math.min(100, score));
   const hot = score >= 70;
   const warm = score >= 45;
@@ -84,14 +102,14 @@ function HeatBar({ score }: { score: number }) {
     <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
       <div
         className={cx(
-          'h-full rounded-full',
+          'h-full rounded-full transition-[width] duration-700 ease-soft',
           hot
             ? 'bg-gradient-to-r from-accent to-down'
             : warm
               ? 'bg-gradient-to-r from-accent to-accent/55'
               : 'bg-accent/45',
         )}
-        style={{ width: `${pct}%` }}
+        style={{ width: grow ? `${pct}%` : '0%', transitionDelay: `${delayMs}ms` }}
       />
     </div>
   );

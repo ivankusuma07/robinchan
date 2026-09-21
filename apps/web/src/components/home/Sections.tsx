@@ -1,36 +1,71 @@
 import Link from 'next/link';
 
+import { ChatIcon, GridIcon, KeyIcon } from '@/components/icons';
+
 /**
  * Static Home blocks (brief §4 blocks 6–8). Their content is fixed and can be
- * hardcoded; since it never changes, the visual treatment is kept simple too
- * (design.md §4).
+ * hardcoded; since it never changes, the visual treatment is kept simple
+ * (design.md §4) — though on the marketing page specifically, "simple"
+ * still leaves room for a hover state and one accent color per card
+ * (design.md §10). Two of three lean on brand green; the middle one gets
+ * `ember`, the marketing layout's one supporting color, so the row reads as
+ * three distinct ideas rather than three copies of the same card.
  */
 
 const FEATURES = [
   {
     title: 'One screen, not six tabs',
-    body: "Prices, SEC filings, news, and on-chain activity collected into one feed with relative time and sentiment — not six sources you have to stitch together yourself.",
+    body: 'Prices, SEC filings, news, and on-chain activity collected into one feed with relative time and sentiment — not six sources you have to stitch together yourself.',
+    Icon: GridIcon,
+    tone: 'accent',
   },
   {
     title: 'Commands in plain sentences',
-    body: "Write what you want in normal language. If anything is unclear, Robinchan asks back — it never guesses, because guessing wrong here means you lose money.",
+    body: 'Write what you want in normal language. If anything is unclear, Robinchan asks back — it never guesses, because guessing wrong here means you lose money.',
+    Icon: ChatIcon,
+    tone: 'ember',
   },
   {
     title: 'Keys stay in your hands',
-    body: "The server builds the transaction payload, then stops there. No private key, seed phrase, or session key is ever stored — every transaction needs a fresh signature from you.",
+    body: 'The server builds the transaction payload, then stops there. No private key, seed phrase, or session key is ever stored — every transaction needs a fresh signature from you.',
+    Icon: KeyIcon,
+    tone: 'accent',
   },
-];
+] as const;
+
+const TONE_STYLES = {
+  accent: {
+    badge: 'bg-accent/10 text-accent',
+    hoverBorder: 'hover:border-accent/40',
+    hoverShadow: 'hover:shadow-[0_0_28px_rgba(123,224,123,0.10)]',
+  },
+  ember: {
+    badge: 'bg-ember/10 text-ember',
+    hoverBorder: 'hover:border-ember/40',
+    hoverShadow: 'hover:shadow-[0_0_28px_rgba(242,166,90,0.10)]',
+  },
+} satisfies Record<string, { badge: string; hoverBorder: string; hoverShadow: string }>;
 
 export function FeatureCards() {
   return (
     <section className="grid gap-4 py-4 md:grid-cols-3" aria-label="Core capabilities">
-      {FEATURES.map((feature, i) => (
-        <article key={feature.title} className="card-soft flex flex-col p-6">
-          <span className="t-eyebrow mb-5">{String(i + 1).padStart(2, '0')}</span>
-          <h3 className="t-h3 mb-3">{feature.title}</h3>
-          <p className="t-small text-[13px] leading-relaxed">{feature.body}</p>
-        </article>
-      ))}
+      {FEATURES.map(({ title, body, Icon, tone }) => {
+        const styles = TONE_STYLES[tone];
+        return (
+          <article
+            key={title}
+            className={`card-soft group flex flex-col p-6 transition-all duration-300 hover:-translate-y-1 ${styles.hoverBorder} ${styles.hoverShadow}`}
+          >
+            <span
+              className={`mb-5 flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110 ${styles.badge}`}
+            >
+              <Icon />
+            </span>
+            <h3 className="t-h3 mb-3">{title}</h3>
+            <p className="t-small text-[13px] leading-relaxed">{body}</p>
+          </article>
+        );
+      })}
     </section>
   );
 }
@@ -72,9 +107,12 @@ export function CapitalFlow() {
 
       <ol className="grid gap-px overflow-hidden rounded-panel bg-border-soft md:grid-cols-4">
         {STEPS.map((step, i) => (
-          <li key={step.label} className="bg-surface p-5">
+          <li
+            key={step.label}
+            className="group bg-surface p-5 transition-colors duration-200 hover:bg-surface-2"
+          >
             <div className="mb-3 flex items-center gap-2.5">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full border border-border font-mono text-[10px] text-text-3">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full border border-border font-mono text-[10px] text-text-3 transition-colors duration-200 group-hover:border-accent/50 group-hover:text-accent">
                 {i + 1}
               </span>
               <span className="font-display text-[14px] font-medium">{step.label}</span>
