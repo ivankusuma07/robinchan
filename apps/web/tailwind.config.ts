@@ -72,13 +72,6 @@ const config: Config = {
           '0%, 45%': { opacity: '1' },
           '55%, 100%': { opacity: '0.15' },
         },
-        // Marketing hero background only (design.md §10) — a slow, barely-
-        // there drift so the two accent blobs never look perfectly static
-        // without reading as a "moving ad".
-        'orb-drift': {
-          '0%, 100%': { transform: 'translate3d(0, 0, 0) scale(1)' },
-          '50%': { transform: 'translate3d(2%, -3%, 0) scale(1.06)' },
-        },
         // One-shot hero entrance, not a loop — plays once on mount.
         'hero-in': {
           from: { opacity: '0', transform: 'translateY(16px)' },
@@ -90,8 +83,6 @@ const config: Config = {
         breathe: 'breathe 2.8s ease-in-out infinite',
         'pod-bounce': 'pod-bounce 1.25s ease-in-out infinite',
         'caret-blink': 'caret-blink 1.1s steps(1, end) infinite',
-        'orb-drift': 'orb-drift 16s ease-in-out infinite',
-        'orb-drift-slow': 'orb-drift 22s ease-in-out infinite reverse',
         'hero-in': 'hero-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) both',
       },
       transitionTimingFunction: {

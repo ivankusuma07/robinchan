@@ -4,6 +4,7 @@ import type { ApiEnvelope, Ticker } from '@robinchan/shared';
 import { ArrowRightIcon } from '@/components/icons';
 import { PulseDot } from '@/components/ui';
 
+import { HeroBackground } from './HeroBackground';
 import { MarketSnapshot } from './MarketSnapshot';
 
 /**
@@ -11,27 +12,16 @@ import { MarketSnapshot } from './MarketSnapshot';
  * Left column 660px, right panel 412×384px, 40px gap — artboard numbers.
  *
  * This is the one section on the site allowed a full-bleed decorative
- * background (design.md §10) — two blurred accent/companion-pink blobs
- * drifting slowly behind the content. It's the page's first impression, so
- * it's the one place worth spending that visual weight; nothing past it
- * repeats the treatment.
+ * background (design.md §10) — a slow accent-green/companion-pink fiber
+ * field (`<HeroBackground>` / React Bits' GhostFibers, recolored) drifting
+ * behind the content. It's the page's first impression, so it's the one
+ * place worth spending that visual weight; nothing past it repeats the
+ * treatment.
  */
 export function Hero({ snapshot }: { snapshot: ApiEnvelope<Ticker[]> }) {
   return (
     <section className="relative isolate overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div
-          className="absolute -left-[10%] -top-[20%] h-[520px] w-[520px] animate-orb-drift rounded-full opacity-[0.18] blur-[110px]"
-          style={{ background: 'radial-gradient(closest-side, #7BE07B, transparent)' }}
-        />
-        <div
-          className="absolute -right-[8%] top-[5%] h-[420px] w-[420px] animate-orb-drift-slow rounded-full opacity-[0.14] blur-[110px]"
-          style={{ background: 'radial-gradient(closest-side, #FFB6C1, transparent)' }}
-        />
-        {/* Fades the art back to flat black before the next section, so the
-            glow reads as "hero backdrop", not a tint over the whole page. */}
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-bg" />
-      </div>
+      <HeroBackground />
 
       <div className="page-container grid-hero items-start px-5 pb-16 pt-14 lg:px-10 lg:pt-20">
         <div className="max-w-hero">
