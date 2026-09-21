@@ -11,10 +11,10 @@ import { isUnset } from '@/lib/api';
 import { usePoll } from '@/lib/usePoll';
 
 /**
- * Panel "Market sekarang" — 412×384px di kanan hero (brief §4).
+ * "Market now" panel — 412×384px to the right of the hero (brief §4).
  *
- * Tingginya dikunci supaya layout tidak melompat saat data datang: lima baris
- * placeholder punya tinggi yang sama dengan lima baris berisi.
+ * Its height is locked so the layout doesn't jump when data arrives: five
+ * placeholder rows are the same height as five populated ones.
  */
 export function MarketSnapshot({ initial }: { initial: ApiEnvelope<Ticker[]> }) {
   const envelope = usePoll<Ticker[]>('/api/market/snapshot', initial, POLL_MS.snapshot);
@@ -25,7 +25,7 @@ export function MarketSnapshot({ initial }: { initial: ApiEnvelope<Ticker[]> }) 
   return (
     <section className="card flex h-[384px] w-full flex-col shadow-glow-soft">
       <CardHead
-        title="Market sekarang"
+        title="Market now"
         aside={
           <>
             {envelope.stale && !isUnset(envelope) ? <StaleBadge /> : null}
@@ -47,8 +47,8 @@ export function MarketSnapshot({ initial }: { initial: ApiEnvelope<Ticker[]> }) 
       </div>
 
       <div className="border-t border-border-soft p-3">
-        <Link href="/market" className="btn-ghost w-full text-sm" aria-label="Buka halaman Market">
-          Lihat semua market
+        <Link href="/market" className="btn-ghost w-full text-sm" aria-label="Open the Market page">
+          View full market
           <ArrowRightIcon />
         </Link>
       </div>

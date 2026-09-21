@@ -12,7 +12,7 @@ const { runCalendar } = await import('./jobs/calendar.js');
 const { runChannels, runClips } = await import('./jobs/media.js');
 const { log } = await import('./lib/log.js');
 
-/** Jadwal worker — brief §8. */
+/** Worker schedule — brief §8. */
 type Job = {
   name: string;
   everyMs: number;
@@ -42,11 +42,11 @@ async function safeRun(job: Job): Promise<void> {
   try {
     await job.run();
   } catch (err) {
-    // Satu job gagal tidak boleh menjatuhkan proses — job lain harus terus jalan.
-    log.error('worker', `${job.name} gagal: ${err instanceof Error ? err.message : String(err)}`);
+    // One job failing must not bring down the process — other jobs keep running.
+    log.error('worker', `${job.name} failed: ${err instanceof Error ? err.message : String(err)}`);
   } finally {
     const ms = Date.now() - started;
-    if (ms > 5000) log.warn('worker', `${job.name} selesai dalam ${ms}ms`);
+    if (ms > 5000) log.warn('worker', `${job.name} took ${ms}ms`);
   }
 }
 
@@ -59,14 +59,14 @@ async function main(): Promise<void> {
 
   await getDb().migrate();
 
-  // Urutan awal penting: berita lebih dulu supaya heat score punya bahan.
+  // Initial order matters: news runs first so heat score has material to work with.
   await safeRun(JOBS[1] as Job);
   await Promise.all([safeRun(JOBS[0] as Job), safeRun(JOBS[3] as Job), safeRun(JOBS[4] as Job)]);
   await safeRun(JOBS[5] as Job);
   await safeRun(JOBS[2] as Job);
 
   if (once) {
-    log.info('worker', 'mode --once selesai');
+    log.info('worker', '--once mode complete');
     await getDb().close();
     return;
   }
@@ -74,13 +74,13 @@ async function main(): Promise<void> {
   for (const job of JOBS) {
     timers.push(setInterval(() => void safeRun(job), job.everyMs));
   }
-  log.info('worker', `${JOBS.length} job terjadwal`);
+  log.info('worker', `${JOBS.length} jobs scheduled`);
 }
 
 function shutdown(signal: string): void {
   if (stopping) return;
   stopping = true;
-  log.info('worker', `${signal} diterima, berhenti`);
+  log.info('worker', `${signal} received, stopping`);
   for (const timer of timers) clearInterval(timer);
   void getDb()
     .close()

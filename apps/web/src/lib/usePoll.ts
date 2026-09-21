@@ -6,9 +6,9 @@ import type { ApiEnvelope } from '@robinchan/shared';
 import { getEnvelope } from './api';
 
 /**
- * Polling sederhana untuk fase 1 (brief §8). Berhenti saat tab tidak aktif
- * supaya tidak membakar kuota provider di balik layar, dan langsung menyegarkan
- * begitu tab kembali terlihat.
+ * Simple polling for phase 1 (brief §8). Stops while the tab is inactive so
+ * it doesn't burn through provider quota in the background, and refreshes
+ * immediately once the tab becomes visible again.
  */
 export function usePoll<T>(
   path: string,
@@ -47,7 +47,7 @@ export function usePoll<T>(
   return state;
 }
 
-/** Jam relatif hanya boleh dihitung setelah hydrate supaya SSR tidak mismatch. */
+/** Relative time may only be computed after hydration, so SSR doesn't mismatch. */
 export function useNow(intervalMs = 30_000): number | null {
   const [now, setNow] = useState<number | null>(null);
 

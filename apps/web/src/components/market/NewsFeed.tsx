@@ -11,7 +11,7 @@ import { useNow, usePoll } from '@/lib/usePoll';
 
 type Filter = 'ALL' | NewsCategory;
 
-/** Feed berita (brief §6): polling 30 detik, waktu relatif dihitung di client. */
+/** News feed (brief §6): polling every 30 seconds, relative time computed client-side. */
 export function NewsFeed({ initial }: { initial: ApiEnvelope<NewsItem[]> }) {
   const [filter, setFilter] = useState<Filter>('ALL');
   const envelope = usePoll<NewsItem[]>('/api/news?limit=20', initial, POLL_MS.news);
@@ -20,13 +20,13 @@ export function NewsFeed({ initial }: { initial: ApiEnvelope<NewsItem[]> }) {
   const items =
     filter === 'ALL' ? envelope.data : envelope.data.filter((item) => item.cat === filter);
   const stale = envelope.stale && !isUnset(envelope);
-  /** Beda dari "tersaring habis": feed-nya memang belum pernah terisi. */
+  /** Different from "filtered down to nothing": the feed has simply never been populated. */
   const feedEmpty = envelope.data.length === 0;
 
   return (
     <section className="card flex flex-col">
       <CardHead
-        title="Feed berita"
+        title="News feed"
         aside={
           <>
             {stale ? <StaleBadge /> : null}
@@ -51,7 +51,7 @@ export function NewsFeed({ initial }: { initial: ApiEnvelope<NewsItem[]> }) {
                 : 'border-border text-text-3 hover:border-text-3 hover:text-text-2',
             )}
           >
-            {cat === 'ALL' ? 'semua' : cat}
+            {cat === 'ALL' ? 'all' : cat}
           </button>
         ))}
       </div>
@@ -60,8 +60,8 @@ export function NewsFeed({ initial }: { initial: ApiEnvelope<NewsItem[]> }) {
         {items.length === 0 ? (
           <p className="px-5 py-10 text-center text-[13px] text-text-3">
             {feedEmpty
-              ? 'Feed belum terisi — worker belum sempat menarik berita.'
-              : 'Tidak ada berita di kategori ini.'}
+              ? "Feed hasn't loaded yet — the worker hasn't pulled news yet."
+              : 'No news in this category.'}
           </p>
         ) : (
           items.map((item) => <NewsCard key={item.id} item={item} now={now} />)

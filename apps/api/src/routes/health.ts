@@ -4,9 +4,9 @@ import { SOURCE_SLOTS } from '@robinchan/shared';
 import { cacheBackend, cacheKey, dbBackend, getCache, getDb } from '@robinchan/store';
 
 /**
- * Satu health endpoint yang mengecek Postgres, Redis, dan umur data terakhir
- * tiap provider (brief §16). Feed yang tidak terbarui lebih dari 15 menit
- * ditandai supaya bisa dijadikan sumber peringatan.
+ * One health endpoint that checks Postgres, Redis, and the age of each
+ * provider's last update (brief §16). A feed that hasn't refreshed in over
+ * 15 minutes is flagged so it can drive an alert.
  */
 const ALERT_AFTER_MS = 15 * 60_000;
 

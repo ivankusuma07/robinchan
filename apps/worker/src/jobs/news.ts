@@ -11,9 +11,9 @@ export const NEWS_TTL_SEC = 120;
 const FEED_SIZE = 40;
 
 /**
- * Dua provider berita, digabung lalu diserahkan ke dedupe di lapisan Db.
- * Kegagalan satu provider tidak menjatuhkan yang lain — halaman Market harus
- * tetap tampil wajar saat satu sumber dimatikan (brief §17, M2).
+ * Two news providers, merged and handed off to the Db layer's dedupe. One
+ * provider failing must not take down the other — the Market page has to
+ * keep rendering sensibly when a single source is switched off (brief §17, M2).
  */
 export async function runNews(): Promise<void> {
   const collected: NewsItem[] = [];
@@ -24,7 +24,7 @@ export async function runNews(): Promise<void> {
   ]);
   for (const result of results) {
     if (result.status === 'fulfilled') collected.push(...result.value);
-    else log.debug('news', result.reason instanceof Error ? result.reason.message : 'gagal');
+    else log.debug('news', result.reason instanceof Error ? result.reason.message : 'failed');
   }
 
   if (collected.length === 0 && fixturesEnabled()) {
@@ -32,11 +32,11 @@ export async function runNews(): Promise<void> {
   }
 
   if (collected.length === 0) {
-    log.warn('news', 'tidak ada item baru; cache lama dibiarkan');
+    log.warn('news', 'no new items; leaving the old cache in place');
     return;
   }
 
-  // Tape hanya menampilkan headline yang ditandai pinned (brief §6).
+  // The tape only shows headlines flagged as pinned (brief §6).
   const pinnedCount = collected.filter((n) => n.pinned).length;
   if (pinnedCount === 0) {
     for (const item of pickForTape(collected)) item.pinned = true;
@@ -47,10 +47,10 @@ export async function runNews(): Promise<void> {
   const feed = await db.listNews({ limit: FEED_SIZE });
   await getCache().set(cacheKey('news', 'latest'), feed, NEWS_TTL_SEC);
 
-  log.info('news', `${collected.length} diambil, ${inserted} baru, feed ${feed.length}`);
+  log.info('news', `${collected.length} fetched, ${inserted} new, feed ${feed.length}`);
 }
 
-/** Enam item terbaru dengan sentimen paling kuat — cukup untuk satu putaran tape. */
+/** The six most recent items with the strongest sentiment — enough for one tape loop. */
 function pickForTape(items: NewsItem[]): NewsItem[] {
   return [...items]
     .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))

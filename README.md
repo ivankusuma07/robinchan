@@ -1,135 +1,139 @@
 # Robinchan
 
-Companion market berkarakter Live2D untuk saham tokenized di Robinhood Chain.
+A Live2D character companion market for tokenized stocks on Robinhood Chain.
 
-Implementasi ini mencakup **M1 (landing page statis)** dan **M2 (data hidup)** dari
-`robinchan-dev-brief.md` §17. M3 (wallet, SIWE, chat streaming) dan M4 (trading) sengaja belum
-dikerjakan — lihat [Batas cakupan](#batas-cakupan).
+This implementation covers **M1 (static landing page)** and **M2 (live data)** from
+`robinchan-dev-brief.md` §17. M3 (wallet, SIWE, chat streaming) and M4 (trading) are deliberately
+not built yet — see [Scope boundaries](#scope-boundaries).
 
 ---
 
-## Jalankan
+## Running it
 
-Butuh Node 20+.
+Needs Node 20+.
 
 ```bash
 npm install
-cp .env.example .env        # semuanya boleh dibiarkan kosong
+cp .env.example .env        # everything can be left empty
 npm run dev
 ```
 
-Tiga proses jalan bersamaan: web di `http://localhost:3000`, API di `http://localhost:4000`, dan
-worker di latar belakang. Halaman Market akan mulai terisi dalam sepuluh detik pertama.
+Three processes run together: web at `http://localhost:3000`, the API at
+`http://localhost:4000`, and the worker in the background. The Market page starts filling in
+within the first ten seconds.
 
-Untuk mengisi data sekali saja tanpa menyalakan worker terus-menerus:
+To populate data once without leaving the worker running continuously:
 
 ```bash
 npm run once -w @robinchan/worker
 ```
 
-Perintah lain: `npm run build`, `npm run typecheck`, `npm run lint`.
+Other commands: `npm run build`, `npm run typecheck`, `npm run lint`.
 
-### Tanpa Postgres dan Redis
+### Without Postgres and Redis
 
-`.env` kosong berarti cache dan database jatuh ke berkas JSON di `.data/`. Ini bukan penyimpanan
-in-memory: API dan worker adalah dua proses terpisah dan harus tetap saling melihat data.
+An empty `.env` means cache and database fall back to JSON files in `.data/`. This isn't
+in-memory storage: the API and worker are two separate processes and need to keep seeing each
+other's data.
 
-Isi `DATABASE_URL` dan `REDIS_URL` untuk memakai yang sungguhan — kodenya sama, hanya
-implementasinya yang bertukar (`packages/store`). Skema Postgres ada di
-`packages/store/src/schema.sql` dan dijalankan otomatis saat API atau worker start.
+Set `DATABASE_URL` and `REDIS_URL` to use the real thing — the code is the same, only the
+implementation swaps out (`packages/store`). The Postgres schema lives in
+`packages/store/src/schema.sql` and runs automatically when the API or worker starts.
 
-### Tanpa API key provider
+### Without provider API keys
 
-Provider yang belum punya kunci berstatus **abu ("belum dikonfigurasi")** di kartu "Sumber yang
-dipantau", bukan merah — belum dikonfigurasi bukan kegagalan. Di `RC_ENV=dev`, provider yang gagal
-atau belum dikonfigurasi diganti data palsu yang menandai dirinya sendiri lewat field `source`.
+A provider without a key yet shows **gray ("not configured")** on the "Sources monitored" card,
+not red — not being configured isn't a failure. In `RC_ENV=dev`, a provider that fails or isn't
+configured is replaced with fake data that flags itself via the `source` field.
 
-Kunci yang membuat data jadi nyata:
+Keys that make the data real:
 
-| Variabel | Mengaktifkan |
+| Variable | Enables |
 | --- | --- |
-| `FINNHUB_API_KEY` | Harga, index, feed berita, kalender earnings |
-| `SEC_EDGAR_USER_AGENT` | Filing SEC (wajib berisi kontak yang bisa dihubungi) |
-| `YOUTUBE_API_KEY` | Id stream aktif per channel dan klip Sorotan |
-| `NEXT_PUBLIC_RCHAN_ADDRESS` | Harga $RCHAN dari DexScreener |
+| `FINNHUB_API_KEY` | Prices, indices, news feed, earnings calendar |
+| `SEC_EDGAR_USER_AGENT` | SEC filings (must include a reachable contact) |
+| `YOUTUBE_API_KEY` | Active stream id per channel and Highlights clips |
+| `NEXT_PUBLIC_RCHAN_ADDRESS` | $RCHAN price from DexScreener |
 
-Tanpa `YOUTUBE_API_KEY`, `videoId` sengaja dikosongkan supaya frontend jatuh ke poster statis +
-tombol "Buka di YouTube" — jalur fallback yang memang diwajibkan brief §6, bukan id palsu yang akan
-gagal dimuat diam-diam.
+Without `YOUTUBE_API_KEY`, `videoId` is deliberately left empty so the frontend falls back to a
+static poster + "Open on YouTube" button — a fallback path brief §6 actually requires, not a fake
+id that would fail to load silently.
 
 ---
 
-## Struktur
+## Structure
 
 ```
 apps/
   web/          Next.js 15 App Router — Home, Robinchan, Market
-  api/          Fastify — REST, membaca cache dan database saja
-  worker/       Cron — menarik provider, menulis cache dan database
+  api/          Fastify — REST, reads from cache and database only
+  worker/       Cron — pulls from providers, writes to cache and database
 packages/
-  shared/       Tipe, konstanta, util format (dipakai ketiganya)
-  store/        Cache dan database di balik satu antarmuka
+  shared/       Types, constants, format utils (used by all three)
+  store/        Cache and database behind one interface
 ```
 
-`packages/store` adalah tambahan di luar struktur yang disebut brief §2. Alasannya: API dan worker
-sama-sama butuh akses cache dan database, dan `packages/shared` tidak boleh menarik `pg` atau
-`ioredis` ke dalam bundle frontend.
+`packages/store` is an addition beyond the structure the brief names in §2. Reason: the API and
+worker both need cache and database access, and `packages/shared` must not pull `pg` or `ioredis`
+into the frontend bundle.
 
-Worker menarik data sesuai jadwal dan menulis ke cache dan database. API hanya membaca, tidak pernah
-memanggil provider saat ada permintaan masuk. Efeknya: halaman tetap cepat, rate limit provider
-aman, dan kalau provider mati, data terakhir masih tersaji dengan penanda `stale`.
+The worker pulls data on its schedule and writes to cache and database. The API only reads — it
+never calls a provider on an incoming request. Effect: pages stay fast, provider rate limits stay
+safe, and if a provider goes down, the last known data still gets served with a `stale` flag.
 
 ---
 
-## Karakter Live2D
+## Live2D character
 
-Model: [Zundamon](https://www.live2d.com/en/learn/sample/zundamon/), sample model Live2D Inc.
-Aset runtime ada di `apps/web/public/live2d/zundamon/`.
+Model: [Zundamon](https://www.live2d.com/en/learn/sample/zundamon/), a Live2D Inc. sample model.
+Runtime assets live in `apps/web/public/live2d/zundamon/`.
 
-- Jalur model dibaca dari `NEXT_PUBLIC_LIVE2D_MODEL_URL`, tidak di-hardcode, supaya bisa ditukar
-  tanpa ubah kode (brief §5).
-- Peta ekspresi produk (`senang`, `fokus`, `waspada`, `santai`) dipisah dari nama ekspresi di
-  `model3.json`, di `apps/web/src/components/live2d/expressions.ts`. Menukar model berarti mengubah
-  satu tabel itu saja.
-- Cubism Core dimuat dari CDN resmi Live2D — paketnya tidak dipublikasikan di npm.
-- `model3.json` yang disalin ke `public/` diberi isi untuk grup `EyeBlink` dan `LipSync`. Live2D
-  mengirimnya kosong; tanpa itu kedip otomatis dan lip-sync tidak punya parameter untuk digerakkan.
-- Tanpa WebGL, stage jatuh ke placeholder statis dan tombol ekspresi dimatikan.
+- The model path is read from `NEXT_PUBLIC_LIVE2D_MODEL_URL`, not hardcoded, so it can be swapped
+  without changing code (brief §5).
+- The product's expression map (`happy`, `focused`, `alert`, `relaxed`) is kept separate from the
+  expression names inside `model3.json`, in
+  `apps/web/src/components/live2d/expressions.ts`. Swapping the model means changing just that
+  one table.
+- Cubism Core loads from Live2D's official CDN — the package isn't published on npm.
+- The `model3.json` copied into `public/` has content filled in for the `EyeBlink` and `LipSync`
+  groups. Live2D ships them empty; without that, auto-blink and lip-sync have no parameters to
+  drive.
+- Without WebGL, the stage falls back to a static placeholder and the expression buttons are
+  disabled.
 
-**Lisensi belum tuntas.** `ReadMe.txt` bawaan menyebut penggunaan komersial boleh untuk pengguna
-umum dan usaha kecil dengan persetujuan syarat, sementara usaha menengah–besar hanya boleh untuk
-pengujian non-publik. Di luar itu, karakter Zundamon punya panduan penggunaannya sendiri dari
-Tohoku Zunko / Zundamon Project. Keduanya perlu dikonfirmasi sebelum produksi — lihat design.md §9.
-Sampai itu jelas, perlakukan aset ini sebagai placeholder. Salinan notis aslinya ada di
+**Licensing isn't settled.** The bundled `ReadMe.txt` says commercial use is allowed for
+individuals and small businesses under agreed terms, while medium-to-large businesses are limited
+to non-public testing. Separately, the Zundamon character has its own usage guidelines from the
+Tohoku Zunko / Zundamon Project. Both need confirmation before production — see design.md §9.
+Until that's settled, treat this asset as a placeholder. A copy of the original notice is at
 `apps/web/public/live2d/zundamon/LICENSE-NOTICE.txt`.
 
 ---
 
-## Batas cakupan
+## Scope boundaries
 
-Yang **belum** dikerjakan karena di luar M1–M2:
+What's **not** built because it's outside M1–M2:
 
-- `POST /api/chat`, `/api/order/*`, `/api/user/tier`, `/api/user/watchlist` — M3 dan M4. Kerangka
-  UI-nya sudah ada (panel chat, kartu tier, `<OrderPreviewCard>`) dan dirender dalam keadaan
-  nonaktif dengan alasannya disebut, bukan dibiarkan terlihat aktif lalu gagal saat ditekan.
-- Connect wallet dan SIWE — M3. Tombolnya sudah menempati ruangnya di topbar supaya tinggi topbar
-  tidak berubah waktu fiturnya menyala.
-- Komponen social pada heat score — fase 3. Bobotnya dibagi proporsional ke on-chain dan berita
-  sesuai brief §13, bukan dibiarkan nol.
-- Job pencatatan buyback — brief §14; tidak ada di daftar M2.
+- `POST /api/chat`, `/api/order/*`, `/api/user/tier`, `/api/user/watchlist` — M3 and M4. The UI
+  skeleton already exists (chat panel, tier cards, `<OrderPreviewCard>`) and renders in a disabled
+  state with the reason stated, rather than looking active and failing silently when pressed.
+- Wallet connect and SIWE — M3. The button already occupies its space in the topbar so the
+  topbar's height doesn't shift when the feature turns on.
+- The social component of heat score — phase 3. Its weight is redistributed proportionally to
+  on-chain and news per brief §13, not left at zero.
+- The buyback logging job — brief §14; not on the M2 list.
 
-Hal yang perlu diputuskan sebelum M3 ada di brief §18 (alamat kontrak $RCHAN, ambang tier, provider
-LLM).
+What needs deciding before M3 is listed in brief §18 ($RCHAN contract address, tier thresholds,
+LLM provider).
 
-### Catatan teknis
+### Technical notes
 
-- **Sentimen berita** memakai skor leksikon di `apps/worker/src/lib/sentiment.ts`. Alpha Vantage
-  News Sentiment baru masuk di fase 2, sementara titik sentimen dan komponen berita pada heat score
-  sudah butuh angka sekarang.
-- **Gating heat score** selalu memperlakukan permintaan sebagai anonim sampai verifikasi tier
-  sungguhan masuk di M3. Memulangkan skor penuh karena client mengaku punya tier akan jadi gating
-  palsu.
-- **`npm audit`** menyisakan dua temuan yang tidak bisa ditutup dari sini:
-  `pixi-live2d-display` mencantumkan `gh-pages` sebagai dependency padahal itu alat deploy
-  dokumentasinya sendiri dan tidak pernah diimpor dari `dist/`; dan `postcss` yang dibundel Next
-  baru diperbaiki di Next 16, sementara brief mengunci Next 14+ dengan Tailwind v3.
+- **News sentiment** uses a lexicon score in `apps/worker/src/lib/sentiment.ts`. Alpha Vantage
+  News Sentiment only lands in phase 2, while the sentiment dots and heat score's news component
+  already need a number now.
+- **Heat score gating** always treats requests as anonymous until real tier verification lands in
+  M3. Returning a full score because a client claims to have a tier would make the gating fake.
+- **`npm audit`** leaves two findings that can't be closed from here:
+  `pixi-live2d-display` lists `gh-pages` as a dependency even though it's its own documentation
+  deploy tool and is never imported from `dist/`; and the `postcss` bundled by Next is only fixed
+  in Next 16, while the brief locks in Next 14+ with Tailwind v3.

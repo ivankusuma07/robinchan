@@ -3,16 +3,17 @@ import type { ReactNode } from 'react';
 import { cx } from '@/components/ui';
 
 /**
- * Baris yang jalan sendiri (brief §7).
+ * A row that scrolls on its own (brief §7).
  *
- * Isinya diduplikasi dua kali di dalam track lalu `translateX` dianimasikan
- * dari 0 ke −50% supaya loop-nya mulus. Pakai CSS `animation`, bukan
- * `requestAnimationFrame` — lebih hemat dan berhenti sendiri saat tab tidak
- * aktif. `prefers-reduced-motion` dihormati lewat aturan global di globals.css.
+ * Its contents are duplicated twice inside the track, then `translateX` is
+ * animated from 0 to −50% so the loop is seamless. Uses CSS `animation`
+ * rather than `requestAnimationFrame` — cheaper, and it stops on its own when
+ * the tab isn't active. `prefers-reduced-motion` is honored via the global
+ * rule in globals.css.
  *
- * Jarak antar kartu ditaruh sebagai `padding-right` di tiap salinan, bukan
- * sebagai `gap` di track. Dengan `gap`, lebar track jadi 2W + gap sementara
- * −50% memindahkan W + gap/2, dan jahitannya meleset setengah jarak.
+ * Gap between cards is applied as `padding-right` on each copy, not as `gap`
+ * on the track. With `gap`, the track width becomes 2W + gap while −50%
+ * shifts it by W + gap/2, and the seam ends up off by half a gap.
  */
 export function Marquee({
   children,
@@ -23,7 +24,7 @@ export function Marquee({
   ariaLabel,
 }: {
   children: ReactNode;
-  /** Detik per satu putaran penuh. */
+  /** Seconds per full loop. */
   speed?: number;
   direction?: 'left' | 'right';
   gap?: number;
@@ -52,7 +53,7 @@ export function Marquee({
         }}
       >
         {half}
-        {/* Salinan kedua menutup jahitan di titik −50%. */}
+        {/* The second copy closes the seam at the −50% mark. */}
         <div aria-hidden className="flex shrink-0">
           {half}
         </div>

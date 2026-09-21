@@ -12,7 +12,7 @@ const query = z.object({
 export async function calendarRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/calendar', async (request) => {
     const parsed = query.safeParse(request.query);
-    if (!parsed.success) throw new ApiFailure('BAD_REQUEST', 'limit tidak valid');
+    if (!parsed.success) throw new ApiFailure('BAD_REQUEST', 'invalid limit');
 
     const hit = await readCached<CalendarEvent[]>('calendar', 'upcoming');
     if (hit) return envelope(hit.data.slice(0, parsed.data.limit), hit);

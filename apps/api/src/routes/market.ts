@@ -9,11 +9,11 @@ const symbolParams = z.object({
     .string()
     .min(1)
     .max(12)
-    .regex(/^[A-Za-z0-9.\-]+$/, 'simbol hanya huruf, angka, titik, dan strip'),
+    .regex(/^[A-Za-z0-9.\-]+$/, 'symbol may only contain letters, digits, dots, and dashes'),
 });
 
 export async function marketRoutes(app: FastifyInstance): Promise<void> {
-  // Lima ticker teratas untuk panel Home (brief §4).
+  // Top five tickers for the Home panel (brief §4).
   app.get('/api/market/snapshot', async () => {
     const hit = await readCached<Ticker[]>('market', 'snapshot');
     if (!hit) return emptyEnvelope<Ticker[]>([]);
@@ -28,11 +28,11 @@ export async function marketRoutes(app: FastifyInstance): Promise<void> {
 
   app.get('/api/market/quote/:symbol', async (request) => {
     const parsed = symbolParams.safeParse(request.params);
-    if (!parsed.success) throw new ApiFailure('BAD_REQUEST', 'simbol tidak valid', 400);
+    if (!parsed.success) throw new ApiFailure('BAD_REQUEST', 'invalid symbol', 400);
 
     const symbol = parsed.data.symbol.toUpperCase();
     const hit = await readCached<Ticker>('price', symbol);
-    if (!hit) throw new ApiFailure('NOT_FOUND', `belum ada harga untuk ${symbol}`, 404);
+    if (!hit) throw new ApiFailure('NOT_FOUND', `no price yet for ${symbol}`, 404);
     return envelope(hit.data, hit);
   });
 }

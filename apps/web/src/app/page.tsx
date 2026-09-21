@@ -8,8 +8,8 @@ import { CapitalFlow, FeatureCards, SiteFooter } from '@/components/home/Section
 import { getEnvelope, ssr } from '@/lib/api';
 
 /**
- * Home (brief §4): halaman marketing yang harus tetap terbaca tanpa wallet
- * terhubung. Dirender di server lalu data harganya dihidrasi di client.
+ * Home (brief §4): a marketing page that must stay readable without a wallet
+ * connected. Rendered on the server, then price data hydrates on the client.
  */
 export const revalidate = 15;
 
@@ -23,8 +23,8 @@ export default async function HomePage() {
     <>
       <Hero snapshot={snapshot} />
 
-      {/* Demo percakapan dan heat board memakai irama kolom yang sama dengan
-          hero (660 / 412) supaya halaman punya satu tulang punggung. */}
+      {/* The chat demo and heat board share the hero's column rhythm
+          (660 / 412) so the page has one consistent backbone. */}
       <section className="grid-hero items-start pb-4">
         <ChatDemo />
         <HeatBoard initial={heat} />

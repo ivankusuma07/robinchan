@@ -39,7 +39,7 @@ export async function fetchQuotes(symbols: readonly string[]): Promise<RawQuote[
         changePct: q.dp ?? ((q.c - q.pc) / q.pc) * 100,
       });
     }
-    if (out.length === 0) throw new Error('tidak ada quote yang terisi');
+    if (out.length === 0) throw new Error('no quotes populated');
     return out;
   });
 }
@@ -99,10 +99,10 @@ export async function fetchEarnings(days: number): Promise<CalendarEvent[]> {
     return raw.earningsCalendar.slice(0, 40).map((e) => ({
       id: `fh_earn_${e.symbol}_${e.date}`,
       date: e.date,
-      title: `${e.symbol} — laporan Q${e.quarter} ${e.year}`,
+      title: `${e.symbol} — Q${e.quarter} ${e.year} report`,
       subtitle:
         e.epsEstimate != null
-          ? `Estimasi EPS ${e.epsEstimate.toFixed(2)} · ${hourLabel(e.hour)}`
+          ? `EPS estimate ${e.epsEstimate.toFixed(2)} · ${hourLabel(e.hour)}`
           : hourLabel(e.hour),
       kind: 'earnings' as const,
       symbol: e.symbol,
@@ -111,12 +111,12 @@ export async function fetchEarnings(days: number): Promise<CalendarEvent[]> {
 }
 
 function hourLabel(hour: string): string {
-  if (hour === 'bmo') return 'sebelum pasar buka';
-  if (hour === 'amc') return 'setelah pasar tutup';
-  return 'jam belum dipastikan';
+  if (hour === 'bmo') return 'before market open';
+  if (hour === 'amc') return 'after market close';
+  return 'time not confirmed';
 }
 
-/** Tape memakai versi pendek, bukan judul penuh (brief §6). */
+/** The tape uses the short version, not the full title (brief §6). */
 export function shorten(title: string, max = 58): string {
   const clean = title.replace(/\s+/g, ' ').trim();
   if (clean.length <= max) return clean;

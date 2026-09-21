@@ -1,5 +1,5 @@
--- Robinchan — skema Postgres (dev brief §10).
--- Tujuh tabel. Harga tidak masuk Postgres, cukup Redis.
+-- Robinchan — Postgres schema (dev brief §10).
+-- Seven tables. Prices don't go into Postgres, Redis is enough.
 
 create table if not exists users (
   id            uuid primary key default gen_random_uuid(),

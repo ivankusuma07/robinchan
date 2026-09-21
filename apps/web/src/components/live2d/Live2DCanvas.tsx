@@ -12,12 +12,12 @@ export type Live2DHandle = {
 export type StageStatus = 'loading' | 'ready' | 'unsupported' | 'failed';
 
 /**
- * Pembungkus canvas Live2D (brief §7).
+ * Live2D canvas wrapper (brief §7).
  *
- * Kontraknya dua method: `setExpression()` dan `speak(audioBuffer)`. Semua
- * impor berat (`pixi.js`, `pixi-live2d-display`) terjadi di dalam efek, jadi
- * bundle halaman lain tidak ikut kebawa — komponen ini sendiri juga dimuat
- * lewat `next/dynamic` dengan `ssr: false` dari `Live2DStage`.
+ * Its contract is two methods: `setExpression()` and `speak(audioBuffer)`.
+ * All the heavy imports (`pixi.js`, `pixi-live2d-display`) happen inside the
+ * effect, so other pages' bundles don't carry them — this component is
+ * itself also loaded via `next/dynamic` with `ssr: false` from `Live2DStage`.
  */
 export function Live2DCanvas({
   handleRef,
@@ -54,9 +54,9 @@ export function Live2DCanvas({
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      // Fallback WebGL: kalau konteksnya tidak ada, jangan coba muat SDK sama
-      // sekali — halaman menampilkan gambar statis dan menyembunyikan tombol
-      // bicara (brief §5).
+      // WebGL fallback: if the context isn't available, don't even try to
+      // load the SDK — the page shows a static image and hides the speak
+      // button (brief §5).
       if (!hasWebGL()) {
         onStatus?.('unsupported');
         return;
@@ -67,7 +67,7 @@ export function Live2DCanvas({
         const PIXI = await import('pixi.js');
         const { Live2DModel } = await import('pixi-live2d-display/cubism4');
 
-        // pixi-live2d-display memakai ticker global PIXI untuk update otomatis.
+        // pixi-live2d-display uses PIXI's global ticker to auto-update.
         Live2DModel.registerTicker(PIXI.Ticker);
 
         if (disposed) return;
@@ -99,8 +99,8 @@ export function Live2DCanvas({
         const onResize = () => fit(model, app as PixiAppLike);
         window.addEventListener('resize', onResize);
 
-        // Arahkan pandangan ke kursor hanya saat kursor ada di atas stage —
-        // gerak kepala yang mengikuti kursor ke seluruh halaman terasa gelisah.
+        // Track the cursor only while it's over the stage — head movement
+        // that follows the cursor across the whole page feels twitchy.
         const parent = canvas.parentElement;
         const onPointerMove = (e: PointerEvent) => {
           const rect = canvas.getBoundingClientRect();
@@ -120,7 +120,7 @@ export function Live2DCanvas({
         };
       } catch (err) {
         if (disposed) return;
-        console.error('[live2d] gagal memuat model', err);
+        console.error('[live2d] failed to load model', err);
         onStatus?.('failed');
       }
     };
@@ -137,7 +137,7 @@ export function Live2DCanvas({
       void audioCtxRef.current?.close();
       audioCtxRef.current = null;
     };
-    // Sengaja sekali jalan: model dimuat ulang hanya lewat remount komponen.
+    // Deliberately runs once: the model only reloads via a component remount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -169,9 +169,9 @@ type Live2DModelLike = {
 };
 
 /**
- * Model Zundamon digambar seluruh badan. Canvas stage cuma 400px, jadi
- * skalanya dipatok ke tinggi dan titik jangkarnya digeser ke atas supaya
- * wajahnya yang terlihat, bukan sepatunya.
+ * The Zundamon model is drawn full-body. The stage canvas is only 400px, so
+ * scale is pinned to height and the anchor point shifted upward so her face
+ * shows, not her shoes.
  */
 function fit(model: Live2DModelLike, app: PixiAppLike): void {
   const { width, height } = app.screen;
@@ -207,16 +207,16 @@ function loadCubismCore(): Promise<void> {
     script.async = true;
     script.crossOrigin = 'anonymous';
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Cubism Core gagal dimuat'));
+    script.onerror = () => reject(new Error('Cubism Core failed to load'));
     document.head.appendChild(script);
   });
   return corePromise;
 }
 
 /**
- * Lip-sync digerakkan amplitudo audio TTS (brief §5). Kalau TTS mati, method
- * ini tidak pernah dipanggil dan mulut tetap idle — tidak ada animasi mulut
- * palsu yang jalan tanpa suara.
+ * Lip-sync is driven by TTS audio amplitude (brief §5). If TTS is off, this
+ * method is never called and the mouth stays idle — no fake mouth animation
+ * running without sound.
  */
 async function playWithLipSync(
   audio: AudioBuffer | ArrayBuffer,

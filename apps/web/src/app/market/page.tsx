@@ -18,14 +18,15 @@ import { getEnvelope, ssr } from '@/lib/api';
 
 export const metadata: Metadata = {
   title: 'Market',
-  description: 'Index, berita, filing, dan siaran langsung untuk saham tokenized.',
+  description: 'Index, news, filings, and live broadcasts for tokenized stocks.',
 };
 
 export const revalidate = 15;
 
 /**
- * Market (brief §6): halaman paling padat data. Semua slot berita di artboard
- * sengaja kosong — isinya datang dari API, dengan interval polling per blok.
+ * Market (brief §6): the most data-dense page. Every news slot in the
+ * artboard is deliberately empty — it's filled from the API, each block at
+ * its own polling interval.
  */
 export default async function MarketPage() {
   const [indices, news, pinned, channels, clips, calendar, sources] = await Promise.all([
@@ -42,8 +43,8 @@ export default async function MarketPage() {
     <>
       <PageHeader
         eyebrow="Market"
-        title="Apa yang bergerak sekarang"
-        lead="Harga index, filing SEC, berita, dan siaran langsung dalam satu layar. Angka yang tidak sempat disegarkan tetap ditampilkan dan ditandai stale, bukan disembunyikan."
+        title="What's moving right now"
+        lead="Index prices, SEC filings, news, and live broadcasts on one screen. Numbers that haven't refreshed in time still render, marked stale, never hidden."
       />
 
       <div className="space-y-4">

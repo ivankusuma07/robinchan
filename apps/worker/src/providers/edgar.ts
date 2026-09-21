@@ -4,9 +4,9 @@ import { callProvider } from './adapter.js';
 import { shorten } from './finnhub.js';
 
 /**
- * SEC EDGAR full-text search. Gratis, tapi mewajibkan User-Agent berisi kontak
- * yang bisa dihubungi — tanpa itu permintaan ditolak, jadi adaptor ini
- * dianggap belum dikonfigurasi kalau `SEC_EDGAR_USER_AGENT` kosong.
+ * SEC EDGAR full-text search. Free, but requires a User-Agent with a
+ * reachable contact — without it requests are rejected, so this adapter is
+ * treated as unconfigured when `SEC_EDGAR_USER_AGENT` is empty.
  */
 const ENDPOINT = 'https://efts.sec.gov/LATEST/search-index';
 
@@ -38,15 +38,15 @@ export async function fetchFilings(symbols: readonly string[], limit: number): P
       const body = (await res.json()) as EdgarResponse;
       for (const hit of body.hits?.hits?.slice(0, 3) ?? []) {
         const company = hit._source.display_names?.[0] ?? symbol;
-        const title = `${company} mengajukan ${hit._source.file_type}`;
+        const title = `${company} files ${hit._source.file_type}`;
         out.push({
           id: `sec_${hit._id}`,
           cat: 'SEC',
           title,
           short: shorten(title),
           symbols: [symbol],
-          // Filing itu peristiwa, bukan opini — biarkan netral dan serahkan
-          // penilaian ke pembaca.
+          // A filing is an event, not an opinion — leave it neutral and let
+          // the reader form a view.
           sentiment: 0,
           url: `https://www.sec.gov/Archives/edgar/data/${hit._source.ciks?.[0] ?? ''}`,
           source: 'SEC EDGAR',
@@ -54,7 +54,7 @@ export async function fetchFilings(symbols: readonly string[], limit: number): P
         });
       }
     }
-    if (out.length === 0) throw new Error('tidak ada filing terbaca');
+    if (out.length === 0) throw new Error('no filings read');
     return out.slice(0, limit);
   });
 }

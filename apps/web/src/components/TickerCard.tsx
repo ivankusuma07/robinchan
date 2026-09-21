@@ -4,11 +4,11 @@ import { direction, formatPct, formatPrice } from '@robinchan/shared';
 import { cx } from '@/components/ui';
 
 /**
- * Satu komponen dengan varian ukuran, bukan tiga komponen berbeda (brief §7).
+ * One component with size variants, not three separate components (brief §7).
  *
- * - `chip`  — kartu di marquee
- * - `row`   — baris di panel "Market sekarang"
- * - `index` — kartu index strip dengan sparkline
+ * - `chip`  — card inside the marquee
+ * - `row`   — row inside the "Market now" panel
+ * - `index` — index strip card with a sparkline
  */
 
 const TONE: Record<'up' | 'down' | 'flat', string> = {
@@ -59,7 +59,7 @@ export function TickerRowEmpty({ symbol }: { symbol: string }) {
     <div className="row-dense flex items-center gap-3 px-5 py-[9px]">
       <div className="min-w-0 flex-1">
         <p className="font-mono text-[13px] tracking-[0.04em] text-text-3">{symbol}</p>
-        <p className="text-[12px] text-text-3">menunggu data</p>
+        <p className="text-[12px] text-text-3">waiting for data</p>
       </div>
       <div className="text-right font-mono text-[13px] text-text-3">
         <p>––––</p>

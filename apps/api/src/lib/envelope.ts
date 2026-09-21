@@ -2,11 +2,11 @@ import type { ApiEnvelope, ApiErrorCode } from '@robinchan/shared';
 import { cacheKey, getCache } from '@robinchan/store';
 
 /**
- * Semua respons dibungkus `{ data, stale, asOf }` (brief §9).
+ * Every response is wrapped as `{ data, stale, asOf }` (brief §9).
  *
- * `stale` bukan "cache miss" — kalau worker telat, API tetap mengembalikan data
- * lama dengan penanda, dan frontend meredupkan teksnya. Selalu sajikan yang
- * basi daripada gagal (brief §8).
+ * `stale` isn't a "cache miss" — if the worker falls behind, the API still
+ * returns the old data with a flag, and the frontend dims its text. Always
+ * serve stale data rather than fail (brief §8).
  */
 export function envelope<T>(data: T, opts: { stale: boolean; asOf?: string }): ApiEnvelope<T> {
   return {
@@ -27,7 +27,7 @@ export class ApiFailure extends Error {
   }
 }
 
-/** Batas umur wajar per domain, detik. Lewat ini data ditandai `stale`. */
+/** Reasonable age limit per domain, in seconds. Past this, data is marked `stale`. */
 export const FRESH_FOR: Record<string, number> = {
   price: 30,
   market: 30,
@@ -40,8 +40,8 @@ export const FRESH_FOR: Record<string, number> = {
 export type Cached<T> = { data: T; stale: boolean; asOf: string };
 
 /**
- * Baca satu kunci cache dan tentukan status basinya dari umur nilai.
- * Mengembalikan `null` hanya kalau kuncinya memang belum pernah ditulis.
+ * Read a single cache key and determine its staleness from the value's age.
+ * Returns `null` only when the key has genuinely never been written.
  */
 export async function readCached<T>(domain: string, key: string): Promise<Cached<T> | null> {
   const hit = await getCache().getWithAge<T>(cacheKey(domain, key));
@@ -55,9 +55,9 @@ export async function readCached<T>(domain: string, key: string): Promise<Cached
 }
 
 /**
- * Bentuk respons saat worker belum sempat mengisi apa pun. Layout tidak boleh
- * melompat dan landing page tidak boleh menampilkan error (brief §4), jadi
- * yang dikirim adalah bentuk kosong yang valid, bukan HTTP 5xx.
+ * The response shape when the worker hasn't had a chance to fill anything in
+ * yet. The layout must not jump and the landing page must not show an error
+ * (brief §4), so what's sent is a valid empty shape, not an HTTP 5xx.
  */
 export function emptyEnvelope<T>(data: T): ApiEnvelope<T> {
   return { data, stale: true, asOf: new Date(0).toISOString() };

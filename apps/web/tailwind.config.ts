@@ -1,8 +1,8 @@
 import type { Config } from 'tailwindcss';
 
 /**
- * Token diambil dari dev brief §3 dan design.md §2. Jangan ubah nilainya tanpa
- * mencatat alasannya di design.md.
+ * Tokens pulled from dev brief §3 and design.md §2. Don't change their
+ * values without recording the reason in design.md.
  */
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
@@ -21,7 +21,7 @@ const config: Config = {
         'accent-ink': '#06240A',
         up: '#6EE787',
         down: '#FF8080',
-        // Aksen karakter, cakupannya dikunci di design.md §2.
+        // Character accent, its scope is locked in design.md §2.
         'companion-pink': '#FFB6C1',
       },
       fontFamily: {
@@ -47,10 +47,10 @@ const config: Config = {
         'glow-soft': '0 0 18px rgba(123, 224, 123, 0.08)',
         'glow-pink': '0 0 26px rgba(255, 182, 193, 0.12)',
       },
-      // Keyframes marquee sengaja tidak di sini: `<Marquee>` memasang
-      // `animation-name` lewat style inline karena kecepatannya prop runtime,
-      // dan Tailwind hanya menerbitkan @keyframes yang dipakai utilitas
-      // `animate-*`. Ditaruh di globals.css supaya tidak ikut tree-shake.
+      // Marquee keyframes are deliberately not here: `<Marquee>` sets
+      // `animation-name` via inline style since speed is a runtime prop, and
+      // Tailwind only emits @keyframes referenced by an `animate-*` utility.
+      // They live in globals.css instead so they don't get tree-shaken.
       keyframes: {
         'pulse-dot': {
           '0%, 100%': { opacity: '1', transform: 'scale(1)' },
@@ -76,7 +76,7 @@ const config: Config = {
         'caret-blink': 'caret-blink 1.1s steps(1, end) infinite',
       },
       transitionTimingFunction: {
-        // Drawer sidebar: lembut, bukan snap (design.md §3).
+        // Sidebar drawer: soft, not a snap (design.md §3).
         soft: 'cubic-bezier(0.22, 1, 0.36, 1)',
       },
     },

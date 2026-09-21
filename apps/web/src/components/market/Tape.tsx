@@ -9,8 +9,8 @@ import { sanitizeText } from '@/lib/sanitize';
 import { usePoll } from '@/lib/usePoll';
 
 /**
- * Tape (brief §6): marquee satu baris setinggi 52px dengan label TAPE yang
- * menempel di kiri. Isinya field `short` dari backend, bukan judul penuh.
+ * Tape (brief §6): a single-row marquee, 52px tall, with a TAPE label pinned
+ * to the left. Its content is the backend's `short` field, not the full title.
  */
 export function Tape({ initial }: { initial: ApiEnvelope<NewsItem[]> }) {
   const envelope = usePoll<NewsItem[]>('/api/news?limit=12&pinned=true', initial, POLL_MS.news);
@@ -24,11 +24,11 @@ export function Tape({ initial }: { initial: ApiEnvelope<NewsItem[]> }) {
 
       {items.length === 0 ? (
         <div className="flex items-center px-4 font-mono text-[12px] text-text-3">
-          menunggu headline…
+          waiting for headlines…
         </div>
       ) : (
         <Marquee
-          ariaLabel="Headline terbaru"
+          ariaLabel="Latest headlines"
           speed={58}
           direction="left"
           gap={0}

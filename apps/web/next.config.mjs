@@ -2,7 +2,7 @@
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-/** Origin API dibaca dari env yang sama dengan yang dipakai klien fetch. */
+/** API origin read from the same env var the fetch client uses. */
 const apiOrigin = (() => {
   try {
     return new URL(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000').origin;
@@ -13,11 +13,11 @@ const apiOrigin = (() => {
 
 const CUBISM_ORIGIN = 'https://cubism.live2d.com';
 
-// CSP ketat; `frame-src` hanya untuk domain embed video yang dipakai (brief §15).
+// Strict CSP; `frame-src` limited to the video embed domains actually used (brief §15).
 const csp = [
   "default-src 'self'",
-  // Next menyisipkan bootstrap inline, dan Cubism Core mengeksekusi WASM.
-  // `unsafe-eval` penuh hanya untuk dev server — production cukup WASM.
+  // Next injects an inline bootstrap script, and Cubism Core executes WASM.
+  // Full `unsafe-eval` is only for the dev server — production only needs WASM.
   `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : "'wasm-unsafe-eval'"} ${CUBISM_ORIGIN}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://i.ytimg.com",
@@ -37,10 +37,10 @@ const nextConfig = {
   poweredByHeader: false,
   transpilePackages: ['@robinchan/shared'],
   /**
-   * `@robinchan/shared` dikonsumsi sebagai sumber TypeScript dan impor
-   * internalnya memakai spesifier `.js` — bentuk yang benar untuk paket ESM,
-   * dan yang dibutuhkan tsx di sisi API dan worker. Webpack tidak memetakannya
-   * ke `.ts` sendiri, jadi alias-nya dipasang di sini.
+   * `@robinchan/shared` is consumed as TypeScript source, and its internal
+   * imports use `.js` specifiers — the correct form for an ESM package, and
+   * what tsx requires on the API and worker side. Webpack doesn't map that
+   * to `.ts` on its own, so the alias is set up here.
    */
   webpack: (config) => {
     config.resolve.extensionAlias = {
@@ -62,7 +62,7 @@ const nextConfig = {
         ],
       },
       {
-        // Aset model tidak pernah berubah tanpa ganti nama berkas.
+        // Model assets never change without a filename change.
         source: '/live2d/:path*',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },

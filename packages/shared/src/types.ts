@@ -1,6 +1,6 @@
 /**
- * Bentuk data yang dipakai bersama oleh web, api, dan worker.
- * Semua waktu ISO 8601 UTC.
+ * Data shapes shared by web, api, and worker.
+ * All times are ISO 8601 UTC.
  */
 
 export type ApiEnvelope<T> = {
@@ -35,11 +35,11 @@ export type Ticker = {
 };
 
 export type MarketIndex = Ticker & {
-  /** 24 titik sparkline, terlama ke terbaru */
+  /** 24 sparkline points, oldest to newest */
   spark: number[];
 };
 
-/* ---------- berita ---------- */
+/* ---------- news ---------- */
 
 export const NEWS_CATEGORIES = ['SEC', 'NEWS', 'CHAIN', 'SOCIAL'] as const;
 export type NewsCategory = (typeof NEWS_CATEGORIES)[number];
@@ -48,7 +48,7 @@ export type NewsItem = {
   id: string;
   cat: NewsCategory;
   title: string;
-  /** versi pendek untuk tape */
+  /** short version for the tape */
   short: string;
   symbols: string[];
   /** -1..1 */
@@ -64,10 +64,10 @@ export type NewsItem = {
 export type MediaChannel = {
   id: string;
   label: string;
-  /** Kosong kalau stream aktif belum bisa dipastikan — frontend jatuh ke poster. */
+  /** Empty when an active stream can't be confirmed — frontend falls back to a poster. */
   videoId: string;
   live: boolean;
-  /** Tujuan tombol 'Buka di YouTube' saat iframe tidak bisa dimuat. */
+  /** Target of the 'Open on YouTube' button when the iframe can't load. */
   url: string;
 };
 
@@ -81,7 +81,7 @@ export type MediaClip = {
   url: string;
 };
 
-/* ---------- kalender ---------- */
+/* ---------- calendar ---------- */
 
 export type CalendarKind = 'earnings' | 'macro' | 'chain';
 
@@ -106,13 +106,13 @@ export type HeatScore = {
   symbol: string;
   name: string;
   score: number;
-  /** null saat user belum memenuhi tier — skor dibulatkan ke kelipatan 10 */
+  /** null when the user doesn't meet the tier — score rounded to the nearest 10 */
   components: HeatComponents | null;
   rounded: boolean;
   computedAt: string;
 };
 
-/* ---------- status provider ---------- */
+/* ---------- provider status ---------- */
 
 export type SourceState = 'ok' | 'idle' | 'down';
 
@@ -134,7 +134,7 @@ export type TierState = {
   unlocked: string[];
 };
 
-/* ---------- order (bentuknya dikunci sekarang, alurnya M4) ---------- */
+/* ---------- order (shape locked now, flow ships in M4) ---------- */
 
 export type OrderSide = 'buy' | 'sell';
 

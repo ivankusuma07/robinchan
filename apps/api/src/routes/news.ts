@@ -20,18 +20,18 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/news', async (request) => {
     const parsed = query.safeParse(request.query);
     if (!parsed.success) {
-      throw new ApiFailure('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'query tidak valid');
+      throw new ApiFailure('BAD_REQUEST', parsed.error.issues[0]?.message ?? 'invalid query');
     }
     const { limit, cat, symbol, pinned } = parsed.data;
 
-    // Jalur cepat: feed default dilayani langsung dari cache yang ditulis worker.
+    // Fast path: the default feed is served straight from the cache the worker writes.
     if (!cat && !symbol && !pinned) {
       const hit = await readCached<NewsItem[]>('news', 'latest');
       if (hit) return envelope(hit.data.slice(0, limit), hit);
     }
 
-    // Query bersaring jatuh ke Postgres — masih baca dari penyimpanan sendiri,
-    // tidak pernah memanggil provider saat permintaan masuk (brief §8).
+    // Filtered queries fall back to Postgres — still reading from our own
+    // storage, never calling a provider on an incoming request (brief §8).
     const rows = await getDb().listNews({
       limit,
       cat,

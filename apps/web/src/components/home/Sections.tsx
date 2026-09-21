@@ -1,29 +1,29 @@
 import Link from 'next/link';
 
 /**
- * Blok statis Home (brief §4 blok 6–8). Isinya tetap dan boleh di-hardcode;
- * karena tidak pernah berubah, tampilannya juga dijaga tetap sederhana
+ * Static Home blocks (brief §4 blocks 6–8). Their content is fixed and can be
+ * hardcoded; since it never changes, the visual treatment is kept simple too
  * (design.md §4).
  */
 
 const FEATURES = [
   {
-    title: 'Satu layar, bukan enam tab',
-    body: 'Harga, filing SEC, berita, dan aktivitas on-chain dikumpulkan jadi satu feed dengan waktu relatif dan sentimen — bukan enam sumber yang harus kamu jahit sendiri.',
+    title: 'One screen, not six tabs',
+    body: "Prices, SEC filings, news, and on-chain activity collected into one feed with relative time and sentiment — not six sources you have to stitch together yourself.",
   },
   {
-    title: 'Perintah dalam kalimat biasa',
-    body: 'Tulis niatmu seperti biasa. Kalau ada yang kurang jelas, Robinchan bertanya balik — tidak pernah menebak, karena salah tebak di sini artinya kamu rugi uang.',
+    title: 'Commands in plain sentences',
+    body: "Write what you want in normal language. If anything is unclear, Robinchan asks back — it never guesses, because guessing wrong here means you lose money.",
   },
   {
-    title: 'Kunci tetap di tanganmu',
-    body: 'Server menyusun payload transaksi, lalu berhenti di situ. Tidak ada private key, seed phrase, atau session key yang disimpan — setiap transaksi butuh tanda tangan baru darimu.',
+    title: 'Keys stay in your hands',
+    body: "The server builds the transaction payload, then stops there. No private key, seed phrase, or session key is ever stored — every transaction needs a fresh signature from you.",
   },
 ];
 
 export function FeatureCards() {
   return (
-    <section className="grid gap-4 py-4 md:grid-cols-3" aria-label="Kemampuan utama">
+    <section className="grid gap-4 py-4 md:grid-cols-3" aria-label="Core capabilities">
       {FEATURES.map((feature, i) => (
         <article key={feature.title} className="card-soft flex flex-col p-6">
           <span className="t-eyebrow mb-5">{String(i + 1).padStart(2, '0')}</span>
@@ -39,34 +39,34 @@ export function FeatureCards() {
 
 const STEPS = [
   {
-    label: 'Fee trading',
-    body: 'Sebagian fee tiap order masuk ke alamat treasury.',
+    label: 'Trading fees',
+    body: 'A portion of every order fee flows to the treasury address.',
   },
   {
-    label: 'Tier premium',
-    body: 'Langganan tier ikut mengalir ke kas yang sama.',
+    label: 'Premium tiers',
+    body: 'Tier subscriptions flow into the same treasury.',
   },
   {
     label: 'Treasury',
-    body: 'Saldo dan akumulasinya dicatat per jam, terbuka untuk dibaca.',
+    body: 'Balance and accrual are logged hourly, open for anyone to read.',
   },
   {
     label: 'Buyback $RCHAN',
-    body: 'Eksekusi pembelian dijalankan manual, bukan oleh server.',
+    body: 'Purchase execution is run manually, not by the server.',
   },
 ];
 
 export function CapitalFlow() {
   return (
-    <section className="card p-6 md:p-8" aria-label="Alur modal">
+    <section className="card p-6 md:p-8" aria-label="Capital flow">
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="t-eyebrow mb-2.5">Alur modal</p>
-          <h2 className="t-h3">Ke mana fee-nya pergi</h2>
+          <p className="t-eyebrow mb-2.5">Capital flow</p>
+          <h2 className="t-h3">Where the fees go</h2>
         </div>
         <p className="max-w-[380px] text-[12px] leading-relaxed text-text-3">
-          Buyback sengaja tidak diotomatiskan. Server yang bisa memindahkan dana berarti server
-          memegang kunci, dan itu bertabrakan dengan prinsip non-custodial.
+          Buyback is deliberately not automated. A server that can move funds means a server
+          holding keys, which conflicts with the non-custodial principle.
         </p>
       </div>
 
@@ -91,10 +91,10 @@ export function CapitalFlow() {
 
 type FooterLink = { label: string; href?: string };
 
-/** Halaman fase 2 belum ada rutenya, jadi disebut tanpa tautan — bukan tautan mati. */
+/** Phase-2 pages have no route yet, so they're named without a link — not a dead link. */
 const FOOTER_LINKS: Array<{ heading: string; links: FooterLink[] }> = [
   {
-    heading: 'Produk',
+    heading: 'Product',
     links: [
       { label: 'Home', href: '/' },
       { label: 'Robinchan', href: '/robinchan' },
@@ -102,14 +102,14 @@ const FOOTER_LINKS: Array<{ heading: string; links: FooterLink[] }> = [
     ],
   },
   {
-    heading: 'Menyusul',
+    heading: 'Coming soon',
     links: [{ label: 'Trade' }, { label: 'Heat' }, { label: 'Portfolio' }],
   },
   {
     heading: 'Token',
     links: [
-      { label: 'Tier & gating', href: '/robinchan' },
-      { label: '$RCHAN di Pons' },
+      { label: 'Tiers & gating', href: '/robinchan' },
+      { label: '$RCHAN on Pons' },
       { label: 'Buyback' },
     ],
   },
@@ -122,7 +122,7 @@ export function SiteFooter() {
         <div className="max-w-[420px]">
           <p className="font-display text-[15px] font-semibold tracking-[0.01em]">Robinchan</p>
           <p className="mt-3 text-[13px] leading-relaxed text-text-3">
-            Companion market berkarakter untuk saham tokenized di Robinhood Chain.
+            A character companion market for tokenized stocks on Robinhood Chain.
           </p>
         </div>
 
@@ -153,10 +153,10 @@ export function SiteFooter() {
 
       <div className="border-t border-border-soft py-8">
         <p className="max-w-[760px] text-[12px] leading-relaxed text-text-3">
-          Bukan nasihat keuangan. Saham tokenized adalah sekuritas dan ketersediaannya berbeda tiap
-          yurisdiksi. Fitur trading masih di balik feature flag yang mati secara default sampai
-          ketentuan lisensi dan disclosure selesai ditinjau. Data harga dan berita berasal dari
-          penyedia pihak ketiga dan bisa terlambat atau tidak lengkap.
+          Not financial advice. Tokenized stocks are securities and their availability varies by
+          jurisdiction. Trading features stay behind a feature flag that&apos;s off by default until
+          licensing and disclosure requirements are reviewed. Price and news data come from
+          third-party providers and may be delayed or incomplete.
         </p>
       </div>
     </footer>

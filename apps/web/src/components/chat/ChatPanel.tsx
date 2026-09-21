@@ -7,13 +7,13 @@ import { ArrowRightIcon } from '@/components/icons';
 import { CardHead, cx } from '@/components/ui';
 
 /**
- * Panel chat halaman `/robinchan` (brief §5).
+ * Chat panel on the `/robinchan` page (brief §5).
  *
- * Ini kerangka chat sungguhan — daftar pesan, komposer, dan slot untuk
- * menyisipkan kartu order di tengah alur. Sambungan SSE ke `POST /api/chat`
- * dan riwayat di server baru masuk di M3 bersama SIWE, jadi komposernya
- * dimatikan dan alasannya disebut terang-terangan, bukan dibiarkan terlihat
- * aktif lalu gagal diam-diam saat ditekan.
+ * This is the real chat's skeleton — a message list, composer, and a slot
+ * for inserting an order card mid-conversation. The SSE connection to
+ * `POST /api/chat` and server-side history only ship in M3 alongside SIWE, so
+ * the composer is disabled and the reason is stated outright, rather than
+ * looking active and silently failing when pressed.
  */
 
 type Message = { id: string; role: 'user' | 'chan'; text: string };
@@ -22,12 +22,12 @@ const SEED: Message[] = [
   {
     id: 'm1',
     role: 'chan',
-    text: 'Halo. Aku bisa bacakan pergerakan harga, filing, dan berita — lalu bantu susun order kalau kamu mau. Tanda tangannya tetap dari wallet kamu sendiri.',
+    text: "Hi. I can read out price moves, filings, and news — and help build an order if you want one. Signing is still done from your own wallet.",
   },
   {
     id: 'm2',
     role: 'chan',
-    text: 'Chat penuh menyala di milestone M3, setelah connect wallet dan SIWE jalan. Sementara ini halaman Market sudah terisi data sungguhan.',
+    text: 'Full chat goes live in milestone M3, once wallet connect and SIWE are wired up. In the meantime, the Market page is already populated with real data.',
   },
 ];
 
@@ -37,16 +37,16 @@ export function ChatPanel() {
   return (
     <section className="card flex h-full min-h-[560px] flex-col">
       <CardHead
-        title="Percakapan"
+        title="Conversation"
         aside={<span className="font-mono text-[11px] text-text-3">M3</span>}
       />
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4" role="log" aria-label="Riwayat pesan">
+      <div className="flex-1 space-y-4 overflow-y-auto p-4" role="log" aria-label="Message history">
         {SEED.map((message) => (
           <Bubble key={message.id} message={message} />
         ))}
 
-        {/* Kursor token streaming: kedipan aksen lembut, bukan caret polos. */}
+        {/* Streaming-token cursor: a soft accent blink, not a plain caret. */}
         <div className="flex gap-3 pl-[40px]">
           <span
             className="inline-block h-[15px] w-[2px] animate-caret-blink rounded-full bg-accent"
@@ -58,11 +58,11 @@ export function ChatPanel() {
       <form
         className="border-t border-border-soft p-3"
         onSubmit={(e) => e.preventDefault()}
-        aria-label="Kirim pesan"
+        aria-label="Send a message"
       >
         <div className="flex items-end gap-2">
           <label htmlFor="chat-input" className="sr-only">
-            Tulis pesan untuk Robinchan
+            Write a message to Robinchan
           </label>
           <textarea
             id="chat-input"
@@ -70,7 +70,7 @@ export function ChatPanel() {
             value={draft}
             disabled
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Chat aktif setelah wallet tersambung (M3)"
+            placeholder="Chat activates once a wallet is connected (M3)"
             className={cx(
               'min-h-[44px] flex-1 resize-none rounded-panel border border-border bg-surface-2 px-3.5 py-3',
               'text-[14px] text-text placeholder:text-text-3 disabled:cursor-not-allowed disabled:opacity-70',
@@ -80,13 +80,14 @@ export function ChatPanel() {
             type="submit"
             disabled
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink transition-shadow disabled:opacity-45 enabled:hover:shadow-glow-pink"
-            aria-label="Kirim"
+            aria-label="Send"
           >
             <ArrowRightIcon />
           </button>
         </div>
         <p className="mt-2.5 px-1 text-[11px] leading-relaxed text-text-3">
-          Riwayat disimpan di server, bukan di browser, supaya konsisten lintas perangkat.
+          History is stored on the server, not in the browser, so it stays consistent across
+          devices.
         </p>
       </form>
     </section>

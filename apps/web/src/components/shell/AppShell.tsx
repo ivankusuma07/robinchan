@@ -10,8 +10,9 @@ import { NAV_ITEMS } from '@/lib/nav';
 import { SidebarContent } from './Sidebar';
 
 /**
- * Shell dipakai ketiga halaman: sidebar 248px, topbar 76px (brief §3).
- * Di bawah 1024px sidebar jadi drawer yang dipicu hamburger di topbar.
+ * Shell shared by all three pages: 248px sidebar, 76px topbar (brief §3).
+ * Below 1024px the sidebar becomes a drawer triggered by the hamburger in
+ * the topbar.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -40,12 +41,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen lg:pl-sidebar">
-      {/* Sidebar tetap di desktop */}
+      {/* Sidebar stays fixed on desktop */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-sidebar border-r border-border-soft bg-surface lg:block">
         <SidebarContent />
       </aside>
 
-      {/* Drawer di bawah 1024px */}
+      {/* Drawer below 1024px */}
       <div
         className={cx(
           'fixed inset-0 z-50 lg:hidden',
@@ -53,9 +54,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
         aria-hidden={!drawerOpen}
       >
-        {/* Penangkap klik di luar drawer. Disembunyikan dari AT supaya tidak
-            jadi kontrol kedua dengan label yang sama — tutup lewat tombol di
-            header drawer atau tombol Escape. */}
+        {/* Click-outside catcher for the drawer. Hidden from AT so it doesn't
+            become a second control with the same label — close via the
+            button in the drawer header or the Escape key instead. */}
         <div
           aria-hidden
           onClick={() => setDrawerOpen(false)}
@@ -81,7 +82,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
-          aria-label="Buka navigasi"
+          aria-label="Open navigation"
           aria-expanded={drawerOpen}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-text-2 transition-colors hover:border-text-3 hover:text-text lg:hidden"
         >
@@ -100,19 +101,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           testnet
         </Pill>
 
-        {/* Wallet masuk di M3 — tombolnya sudah ada supaya topbar tidak berubah
-            tinggi waktu fiturnya menyala. */}
+        {/* Wallet ships in M3 — the button already occupies its space so the
+            topbar height doesn't shift when the feature turns on. */}
         <button
           type="button"
           disabled
-          title="Connect wallet menyusul di milestone M3"
+          title="Wallet connect ships in milestone M3"
           className="btn-ghost h-11 px-4 text-sm"
         >
           Connect wallet
         </button>
       </header>
 
-      <main id="konten" className="px-5 pb-24 pt-8 lg:px-10">
+      <main id="content" className="px-5 pb-24 pt-8 lg:px-10">
         <div className="mx-auto w-full max-w-[1112px]">{children}</div>
       </main>
     </div>

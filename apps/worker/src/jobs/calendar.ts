@@ -15,17 +15,17 @@ export async function runCalendar(): Promise<void> {
     events = await fetchEarnings(HORIZON_DAYS);
   } catch (err) {
     if (!fixturesEnabled()) throw err;
-    log.debug('calendar', `provider tidak tersedia (${(err as Error).message})`);
+    log.debug('calendar', `provider unavailable (${(err as Error).message})`);
     events = fixtureCalendar();
   }
 
   if (events.length === 0) {
-    log.warn('calendar', 'tidak ada event; data lama dibiarkan');
+    log.warn('calendar', 'no events; leaving old data in place');
     return;
   }
 
   await db.upsertCalendar(events);
   const upcoming = await db.listCalendar(12);
   await getCache().set(cacheKey('calendar', 'upcoming'), upcoming, CALENDAR_TTL_SEC);
-  log.info('calendar', `${events.length} event, ${upcoming.length} mendatang`);
+  log.info('calendar', `${events.length} events, ${upcoming.length} upcoming`);
 }

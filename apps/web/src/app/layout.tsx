@@ -28,17 +28,16 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
   title: {
-    default: 'Robinchan — companion market di Robinhood Chain',
+    default: 'Robinchan — companion market on Robinhood Chain',
     template: '%s · Robinchan',
   },
   description:
-    'Baca market saham tokenized, susun order lewat percakapan, tanda tangani sendiri. Non-custodial di Robinhood Chain.',
+    'Read tokenized stock markets, build orders through conversation, sign them yourself. Non-custodial on Robinhood Chain.',
   openGraph: {
     type: 'website',
     siteName: 'Robinchan',
-    title: 'Robinchan — companion market di Robinhood Chain',
-    description:
-      'Baca market saham tokenized, susun order lewat percakapan, tanda tangani sendiri.',
+    title: 'Robinchan — companion market on Robinhood Chain',
+    description: 'Read tokenized stock markets, build orders through conversation, sign them yourself.',
   },
 };
 
@@ -49,13 +48,13 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body>
         <a
-          href="#konten"
+          href="#content"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:rounded-full focus:bg-accent focus:px-4 focus:py-2 focus:text-accent-ink"
         >
-          Lompat ke konten
+          Skip to content
         </a>
         <AppShell>{children}</AppShell>
       </body>

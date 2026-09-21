@@ -22,8 +22,8 @@ const PORT = Number(process.env.API_PORT ?? 4000);
 const HOST = process.env.API_HOST ?? '0.0.0.0';
 
 const app = Fastify({
-  // Log per-permintaan dimatikan di production lewat LOG_LEVEL, bukan lewat
-  // opsi `disableRequestLogging` yang sudah deprecated di Fastify 5.
+  // Per-request logging is turned down in production via LOG_LEVEL, not via
+  // the `disableRequestLogging` option, which is deprecated in Fastify 5.
   logger: {
     level: process.env.LOG_LEVEL ?? (process.env.RC_ENV === 'production' ? 'warn' : 'info'),
   },
@@ -34,7 +34,7 @@ app.addHook('onSend', async (_req, reply) => {
 });
 
 await app.register(helmet, {
-  contentSecurityPolicy: false, // CSP halaman diatur di Next.js, bukan di API.
+  contentSecurityPolicy: false, // Page CSP is set in Next.js, not the API.
   hsts: { maxAge: 31_536_000, includeSubDomains: true },
 });
 
@@ -43,14 +43,14 @@ await app.register(cors, {
   methods: ['GET', 'POST', 'PUT'],
 });
 
-/** Endpoint publik 60 permintaan per menit per IP (brief §9). */
+/** Public endpoints: 60 requests per minute per IP (brief §9). */
 await app.register(rateLimit, {
   max: Number(process.env.RATE_LIMIT_PUBLIC ?? 60),
   timeWindow: '1 minute',
   errorResponseBuilder: () => ({
     error: {
       code: 'RATE_LIMITED',
-      message: 'terlalu banyak permintaan, coba lagi sebentar',
+      message: 'too many requests, try again shortly',
     },
   }),
 });
@@ -61,12 +61,12 @@ app.setErrorHandler((err, _request, reply) => {
   }
   app.log.error(err);
   return reply.status(500).send({
-    error: { code: 'INTERNAL', message: 'terjadi kesalahan di server' },
+    error: { code: 'INTERNAL', message: 'an internal error occurred' },
   });
 });
 
 app.setNotFoundHandler((_request, reply) =>
-  reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'endpoint tidak dikenal' } }),
+  reply.status(404).send({ error: { code: 'NOT_FOUND', message: 'unknown endpoint' } }),
 );
 
 await app.register(marketRoutes);

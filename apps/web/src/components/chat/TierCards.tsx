@@ -2,12 +2,12 @@ import { LockIcon, WaveformIcon } from '@/components/icons';
 import { cx } from '@/components/ui';
 
 /**
- * Tiga kartu tier (brief §5): Suara (gratis), Memori panjang (Tier 2),
- * Kepribadian custom (Tier 3).
+ * Three tier cards (brief §5): Voice (free), Long-term memory (Tier 2),
+ * Custom personality (Tier 3).
  *
- * Status kunci sesungguhnya dibaca dari `GET /api/user/tier` di M3. Sampai
- * wallet tersambung, semuanya tampil terkunci dengan CTA connect — itu memang
- * keadaan default yang ditentukan brief, bukan placeholder.
+ * The real lock state is read from `GET /api/user/tier` in M3. Until a
+ * wallet is connected, everything shows locked with a connect CTA — that's
+ * the actual default state the brief specifies, not a placeholder.
  */
 
 type Tier = {
@@ -21,43 +21,43 @@ type Tier = {
 
 const TIERS: Tier[] = [
   {
-    id: 'suara',
-    name: 'Suara',
-    tier: 'Gratis',
-    body: 'Robinchan membacakan ringkasan market dan balasannya dengan suara, dengan lip-sync yang ikut bergerak.',
+    id: 'voice',
+    name: 'Voice',
+    tier: 'Free',
+    body: 'Robinchan reads out market summaries and her replies out loud, with lip-sync moving along.',
     bullets: [
-      'Text-to-speech VOICEVOX',
-      'Lip-sync dari amplitudo audio',
-      'Mati otomatis kalau TTS turun',
+      'VOICEVOX text-to-speech',
+      'Lip-sync driven by audio amplitude',
+      'Falls back to idle automatically if TTS goes down',
     ],
     voice: true,
   },
   {
-    id: 'memori',
-    name: 'Memori panjang',
+    id: 'memory',
+    name: 'Long-term memory',
     tier: 'Tier 2',
-    body: 'Ingat watchlist, kebiasaan baca, dan konteks percakapan lama — tidak mulai dari nol tiap sesi.',
-    bullets: ['Riwayat lintas perangkat', 'Alert per simbol', 'Heat score dengan rincian komponen'],
+    body: "Remembers your watchlist, reading habits, and past conversation context — no starting from zero every session.",
+    bullets: ['History across devices', 'Per-symbol alerts', 'Heat score with full component detail'],
   },
   {
-    id: 'kepribadian',
-    name: 'Kepribadian custom',
+    id: 'personality',
+    name: 'Custom personality',
     tier: 'Tier 3',
-    body: 'Atur nada bicara dan seberapa jauh dia boleh memberi pendapat, bukan cuma membacakan angka.',
-    bullets: ['Nada bicara custom', 'Limit order', 'Akses penuh heat board'],
+    body: "Tune her tone and how far she's allowed to offer an opinion, not just read out numbers.",
+    bullets: ['Custom speaking tone', 'Limit orders', 'Full heat board access'],
   },
 ];
 
 export function TierCards() {
   return (
-    <section aria-label="Tier" className="grid gap-4 md:grid-cols-3">
+    <section aria-label="Tiers" className="grid gap-4 md:grid-cols-3">
       {TIERS.map((tier) => (
         <article
           key={tier.id}
           className={cx(
             'card relative flex flex-col overflow-hidden p-6',
-            // Terkunci berarti "belum", bukan "rusak" — redup dan lembut,
-            // bukan tertutup lapisan abu rata (design.md §5).
+            // Locked means "not yet", not "broken" — dim and soft, not
+            // covered by a flat gray overlay (design.md §5).
             'opacity-[0.82]',
           )}
         >
@@ -67,7 +67,7 @@ export function TierCards() {
             </span>
             <span className="flex items-center gap-1.5 font-mono text-[11px] text-text-3">
               <LockIcon />
-              terkunci
+              locked
             </span>
           </div>
 

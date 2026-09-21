@@ -8,17 +8,17 @@ import { CardHead, StatusDot, cx } from '@/components/ui';
 import { sanitizeText } from '@/lib/sanitize';
 import { useNow, usePoll } from '@/lib/usePoll';
 
-/** Kartu klip "Sorotan" — refresh 5 menit (brief §6). */
+/** "Highlights" clip cards — refreshed every 5 minutes (brief §6). */
 export function Highlights({ initial }: { initial: ApiEnvelope<MediaClip[]> }) {
   const envelope = usePoll<MediaClip[]>('/api/media/clips', initial, POLL_MS.clips);
   const now = useNow(60_000);
 
   return (
     <section className="card">
-      <CardHead title="Sorotan" />
+      <CardHead title="Highlights" />
       <div className="space-y-2.5 p-4">
         {envelope.data.length === 0 ? (
-          <p className="py-6 text-center text-[13px] text-text-3">Belum ada klip.</p>
+          <p className="py-6 text-center text-[13px] text-text-3">No clips yet.</p>
         ) : (
           envelope.data.slice(0, 4).map((clip) => <ClipCard key={clip.id} clip={clip} now={now} />)
         )}
@@ -31,20 +31,22 @@ export function Highlights({ initial }: { initial: ApiEnvelope<MediaClip[]> }) {
 
 const KIND_LABEL: Record<CalendarEvent['kind'], string> = {
   earnings: 'EARN',
-  macro: 'MAKRO',
+  macro: 'MACRO',
   chain: 'CHAIN',
 };
 
-/** Katalis berikutnya — refresh 1 jam (brief §6). */
+/** Upcoming catalysts — refreshed hourly (brief §6). */
 export function Catalysts({ initial }: { initial: ApiEnvelope<CalendarEvent[]> }) {
   const envelope = usePoll<CalendarEvent[]>('/api/calendar?limit=5', initial, POLL_MS.calendar);
 
   return (
     <section className="card">
-      <CardHead title="Katalis berikutnya" />
+      <CardHead title="Upcoming catalysts" />
       <ul className="divide-y divide-border-soft">
         {envelope.data.length === 0 ? (
-          <li className="px-5 py-8 text-center text-[13px] text-text-3">Kalender belum terisi.</li>
+          <li className="px-5 py-8 text-center text-[13px] text-text-3">
+            Calendar hasn&apos;t loaded yet.
+          </li>
         ) : (
           envelope.data.slice(0, 5).map((event) => (
             <li key={event.id} className="flex gap-3.5 px-5 py-3.5">
@@ -75,7 +77,7 @@ export function Catalysts({ initial }: { initial: ApiEnvelope<CalendarEvent[]> }
 function formatDay(date: string): string {
   const parsed = new Date(`${date}T00:00:00Z`);
   if (Number.isNaN(parsed.getTime())) return '--';
-  return parsed.toLocaleDateString('id-ID', {
+  return parsed.toLocaleDateString('en-US', {
     day: '2-digit',
     month: 'short',
     timeZone: 'UTC',
@@ -85,9 +87,9 @@ function formatDay(date: string): string {
 /* ------------------------------------------------------------------ */
 
 /**
- * "Sumber yang dipantau" (brief §6): delapan slot dalam grid dua kolom dengan
- * status sungguhan dari `/api/sources/status`. Ini juga panel diagnosa waktu
- * ada feed yang mati.
+ * "Sources monitored" (brief §6): eight slots in a two-column grid with real
+ * status from `/api/sources/status`. This also doubles as the diagnostic
+ * panel when a feed goes down.
  */
 export function SourcePanel({ initial }: { initial: ApiEnvelope<SourceStatus[]> }) {
   const envelope = usePoll<SourceStatus[]>('/api/sources/status', initial, POLL_MS.sources);
@@ -97,10 +99,10 @@ export function SourcePanel({ initial }: { initial: ApiEnvelope<SourceStatus[]> 
   return (
     <section className="card">
       <CardHead
-        title="Sumber yang dipantau"
+        title="Sources monitored"
         aside={
           <span className={cx('font-mono text-[11px]', down > 0 ? 'text-down' : 'text-text-3')}>
-            {down > 0 ? `${down} bermasalah` : `${sources.length} slot`}
+            {down > 0 ? `${down} down` : `${sources.length} slots`}
           </span>
         }
       />

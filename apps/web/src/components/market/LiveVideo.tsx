@@ -9,14 +9,14 @@ import { safeUrl, sanitizeText } from '@/lib/sanitize';
 import { usePoll } from '@/lib/usePoll';
 
 /**
- * Siaran video live (brief §6).
+ * Live video broadcast (brief §6).
  *
- * - Slot 16:9 di dalam kartu setinggi 352px
- * - Iframe baru di-mount saat kartu masuk viewport, dan `loading="lazy"`
- * - Mulai dalam keadaan mute; autoplay bersuara akan diblokir browser
- * - Tab channel mengganti `videoId` tanpa reload halaman
- * - Kalau `videoId` belum ada atau iframe gagal, tampilkan poster + tombol ke
- *   YouTube — `videoId` datang dari API, tidak pernah di-hardcode di sini
+ * - 16:9 slot inside a card, 352px tall
+ * - The iframe only mounts once the card enters the viewport, plus `loading="lazy"`
+ * - Starts muted; autoplay with sound would be blocked by the browser anyway
+ * - Channel tabs swap `videoId` without a page reload
+ * - If `videoId` isn't available yet or the iframe fails, show a poster +
+ *   button to YouTube — `videoId` comes from the API, never hardcoded here
  */
 export function LiveVideo({ initial }: { initial: ApiEnvelope<MediaChannel[]> }) {
   const envelope = usePoll<MediaChannel[]>('/api/media/channels', initial, 10 * 60_000);
@@ -52,7 +52,7 @@ export function LiveVideo({ initial }: { initial: ApiEnvelope<MediaChannel[]> })
   return (
     <section ref={cardRef} className="card overflow-hidden">
       <CardHead
-        title="Siaran langsung"
+        title="Live broadcast"
         aside={
           active?.live ? (
             <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-accent">
@@ -60,7 +60,7 @@ export function LiveVideo({ initial }: { initial: ApiEnvelope<MediaChannel[]> })
               LIVE
             </span>
           ) : (
-            <span className="font-mono text-[11px] text-text-3">tidak ada stream aktif</span>
+            <span className="font-mono text-[11px] text-text-3">no active stream</span>
           )
         }
       />
@@ -69,9 +69,9 @@ export function LiveVideo({ initial }: { initial: ApiEnvelope<MediaChannel[]> })
         {active && active.videoId && visible && !failed ? (
           <iframe
             key={active.videoId}
-            // youtube-nocookie + mute=1: autoplay bersuara pasti diblokir.
+            // youtube-nocookie + mute=1: autoplay with sound would be blocked anyway.
             src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(active.videoId)}?autoplay=1&mute=1&playsinline=1&rel=0`}
-            title={`Siaran langsung ${sanitizeText(active.label, 40)}`}
+            title={`Live broadcast: ${sanitizeText(active.label, 40)}`}
             loading="lazy"
             allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
@@ -86,11 +86,11 @@ export function LiveVideo({ initial }: { initial: ApiEnvelope<MediaChannel[]> })
       <div
         className="flex flex-wrap gap-2 border-t border-border-soft p-3"
         role="tablist"
-        aria-label="Pilih channel"
+        aria-label="Choose a channel"
       >
         {channels.length === 0 ? (
           <span className="px-2 py-1 font-mono text-[11px] text-text-3">
-            daftar channel belum terisi
+            channel list hasn&apos;t loaded yet
           </span>
         ) : (
           channels.map((channel) => {
@@ -126,10 +126,11 @@ function Poster({ channel }: { channel: MediaChannel | null }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-surface-2 px-6 text-center">
       <p className="font-mono text-[12px] uppercase tracking-[0.12em] text-text-3">
-        stream tidak bisa dimuat
+        stream couldn&apos;t load
       </p>
       <p className="max-w-[360px] text-[13px] leading-relaxed text-text-3">
-        Id siaran aktif belum bisa dipastikan dari penyedia. Channel-nya tetap bisa dibuka langsung.
+        The provider hasn&apos;t confirmed an active stream id yet. The channel can still be opened
+        directly.
       </p>
       {href ? (
         <a
@@ -138,7 +139,7 @@ function Poster({ channel }: { channel: MediaChannel | null }) {
           rel="noopener noreferrer"
           className="btn-ghost h-10 text-[13px]"
         >
-          Buka di YouTube
+          Open on YouTube
           <ExternalIcon />
         </a>
       ) : null}

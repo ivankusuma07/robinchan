@@ -9,7 +9,7 @@ import { NAV_ITEMS } from '@/lib/nav';
 
 export function SidebarContent({
   onNavigate,
-  /** Hanya diisi saat sidebar dipakai sebagai drawer di bawah 1024px. */
+  /** Only set when the sidebar is used as a drawer below 1024px. */
   onClose,
 }: {
   onNavigate?: () => void;
@@ -30,7 +30,7 @@ export function SidebarContent({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup navigasi"
+            aria-label="Close navigation"
             className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-text-3 transition-colors hover:text-text"
           >
             <CloseIcon />
@@ -38,8 +38,8 @@ export function SidebarContent({
         ) : null}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-4 py-5" aria-label="Navigasi utama">
-        <p className="t-eyebrow px-2 pb-3">Navigasi</p>
+      <nav className="flex-1 overflow-y-auto px-4 py-5" aria-label="Main navigation">
+        <p className="t-eyebrow px-2 pb-3">Navigation</p>
         <ul className="space-y-1">
           {NAV_ITEMS.map((item) => {
             const active =
@@ -52,7 +52,7 @@ export function SidebarContent({
                   <span
                     aria-disabled="true"
                     className="flex min-h-[44px] items-center gap-3 rounded-full px-3 text-text-3"
-                    title="Halaman ini belum ada — menyusul di fase 2"
+                    title="This page doesn't exist yet — coming in phase 2"
                   >
                     <Icon className="shrink-0 opacity-60" />
                     <span className="flex-1 text-sm">{item.label}</span>
@@ -90,7 +90,8 @@ export function SidebarContent({
       <div className="border-t border-border-soft px-6 py-5">
         <p className="t-eyebrow mb-2">Status</p>
         <p className="text-[13px] leading-relaxed text-text-3">
-          Non-custodial. Kunci tetap di wallet kamu — server tidak pernah bisa menandatangani.
+          Non-custodial. Your keys stay in your own wallet — the server can never sign on your
+          behalf.
         </p>
       </div>
     </div>

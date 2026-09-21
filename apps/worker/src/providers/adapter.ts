@@ -2,9 +2,10 @@ import type { SourceState } from '@robinchan/shared';
 import { cacheKey, getCache } from '@robinchan/store';
 
 /**
- * Aturan umum adaptor (brief §11): timeout 8 detik, tiga percobaan dengan jeda
- * melebar, dan circuit breaker — setelah lima kegagalan beruntun, provider
- * dijeda 10 menit dan ditandai merah di `/api/sources/status`.
+ * General adapter rules (brief §11): 8-second timeout, three attempts with
+ * widening backoff, and a circuit breaker — after five failures in a row,
+ * the provider is paused for 10 minutes and flagged red in
+ * `/api/sources/status`.
  */
 const TIMEOUT_MS = 8_000;
 const MAX_ATTEMPTS = 3;
@@ -15,7 +16,7 @@ export type ProviderHealth = {
   state: SourceState;
   lastOkAt: string | null;
   failures: number;
-  /** Timestamp saat breaker boleh dicoba lagi. */
+  /** Timestamp when the breaker may be tried again. */
   openUntil: number | null;
   note: string;
 };
@@ -34,7 +35,7 @@ export async function readHealth(id: string): Promise<ProviderHealth> {
       lastOkAt: null,
       failures: 0,
       openUntil: null,
-      note: 'belum dikonfigurasi',
+      note: 'not configured',
     }
   );
 }
@@ -62,8 +63,9 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Bungkus satu panggilan provider. `configured: false` menandai provider yang
- * belum punya API key — statusnya abu, bukan merah, karena bukan kegagalan.
+ * Wrap a single provider call. `configured: false` flags a provider that
+ * doesn't have an API key yet — its status is gray, not red, since it's not
+ * a failure.
  */
 export async function callProvider<T>(
   opts: { id: string; configured?: boolean },
@@ -76,14 +78,14 @@ export async function callProvider<T>(
     await writeHealth(id, {
       ...health,
       state: 'idle',
-      note: 'belum dikonfigurasi',
+      note: 'not configured',
     });
-    throw new ProviderSkipped(id, 'API key belum diisi');
+    throw new ProviderSkipped(id, 'API key not set');
   }
 
   if (health.openUntil && Date.now() < health.openUntil) {
     const waitSec = Math.ceil((health.openUntil - Date.now()) / 1000);
-    throw new ProviderSkipped(id, `circuit terbuka, coba lagi ${waitSec}s`);
+    throw new ProviderSkipped(id, `circuit open, retry in ${waitSec}s`);
   }
 
   let lastErr: unknown;
@@ -95,7 +97,7 @@ export async function callProvider<T>(
         lastOkAt: new Date().toISOString(),
         failures: 0,
         openUntil: null,
-        note: 'merespons normal',
+        note: 'responding normally',
       });
       return result;
     } catch (err) {
@@ -112,8 +114,8 @@ export async function callProvider<T>(
     failures,
     openUntil: tripped ? Date.now() + TRIP_FOR_MS : null,
     note: tripped
-      ? `dijeda 10 menit setelah ${failures} kegagalan beruntun`
-      : `gagal ${failures}×: ${errText(lastErr)}`,
+      ? `paused for 10 minutes after ${failures} failures in a row`
+      : `failed ${failures}×: ${errText(lastErr)}`,
   });
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }
@@ -131,7 +133,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
       promise,
       new Promise<never>((_, reject) => {
         controller.signal.addEventListener('abort', () =>
-          reject(new Error(`timeout setelah ${ms}ms`)),
+          reject(new Error(`timed out after ${ms}ms`)),
         );
       }),
     ]);
@@ -140,7 +142,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   }
 }
 
-/** Fetch JSON dengan abort signal sendiri, dipanggil dari dalam `callProvider`. */
+/** Fetch JSON with its own abort signal, called from inside `callProvider`. */
 export async function fetchJson<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
     ...init,

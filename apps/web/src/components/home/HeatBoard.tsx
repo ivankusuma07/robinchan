@@ -8,11 +8,11 @@ import { isUnset } from '@/lib/api';
 import { usePoll } from '@/lib/usePoll';
 
 /**
- * Heat board (brief §4 blok 4): lima baris dengan bar skor.
+ * Heat board (brief §4 block 4): five rows with a score bar.
  *
- * Tanpa wallet, API mengembalikan skor yang dibulatkan ke kelipatan 10 dan
- * tanpa rincian komponen (brief §13) — jadi kartu ini menyebut pembulatannya
- * terang-terangan, bukan menampilkan angka bulat seolah itu presisi penuh.
+ * Without a wallet, the API returns scores rounded to the nearest 10 and
+ * without component detail (brief §13) — so this card names the rounding
+ * outright, rather than showing round numbers as if they were full precision.
  */
 export function HeatBoard({ initial }: { initial: ApiEnvelope<HeatScore[]> }) {
   const envelope = usePoll<HeatScore[]>('/api/heat?limit=5', initial, POLL_MS.heat);
@@ -25,7 +25,7 @@ export function HeatBoard({ initial }: { initial: ApiEnvelope<HeatScore[]> }) {
         aside={
           <>
             {envelope.stale && !isUnset(envelope) ? <StaleBadge /> : null}
-            <span className="font-mono text-[11px] text-text-3">dibulatkan ×10</span>
+            <span className="font-mono text-[11px] text-text-3">rounded ×10</span>
           </>
         }
       />
@@ -41,7 +41,7 @@ export function HeatBoard({ initial }: { initial: ApiEnvelope<HeatScore[]> }) {
       </div>
 
       <p className="border-t border-border-soft px-5 py-3.5 text-[12px] leading-relaxed text-text-3">
-        Skor gabungan aktivitas on-chain dan berita 24 jam. Komponen social menyusul di fase 3.
+        Score combines on-chain activity and 24-hour news. The social component ships in phase 3.
       </p>
     </section>
   );
@@ -72,8 +72,8 @@ function HeatRowEmpty({ symbol }: { symbol: string }) {
 }
 
 /**
- * Bar memakai gradien per tingkat skor, bukan warna rata (design.md §4).
- * Skor tinggi bergeser ke arah `down` — "panas" tidak selalu berarti bagus.
+ * The bar uses a gradient keyed to score tier, not a flat color (design.md §4).
+ * High scores shift toward `down` — "hot" doesn't always mean good.
  */
 function HeatBar({ score }: { score: number }) {
   const pct = Math.max(3, Math.min(100, score));

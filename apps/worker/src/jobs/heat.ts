@@ -10,8 +10,9 @@ export const HEAT_TTL_SEC = 600;
 /**
  * heat = 100 × ( w_o·s_o + w_n·s_n + w_s·s_s )   — brief §13
  *
- * Tiap komponen dinormalisasi ke 0..1 dulu, baru dikalikan bobotnya. Bobot
- * dibaca dari environment supaya bisa disetel tanpa deploy ulang.
+ * Each component is normalized to 0..1 first, then multiplied by its weight.
+ * Weights are read from the environment so they can be tuned without a
+ * redeploy.
  */
 function weights(): { onchain: number; news: number; social: number } {
   return {
@@ -26,9 +27,9 @@ function socialEnabled(): boolean {
 }
 
 /**
- * Sebelum social aktif, bobotnya dibagi proporsional ke dua komponen lain —
- * membiarkannya nol akan menekan semua skor ke bawah dan membuat heat board
- * terlihat mati (brief §13).
+ * Before social is enabled, its weight is redistributed proportionally to
+ * the other two components — leaving it at zero would push every score down
+ * and make the heat board look dead (brief §13).
  */
 function activeWeights(): { onchain: number; news: number; social: number } {
   const w = weights();
@@ -44,7 +45,7 @@ function activeWeights(): { onchain: number; news: number; social: number } {
 
 const clamp01 = (n: number): number => Math.max(0, Math.min(1, n));
 
-/** Rasio volume, pertumbuhan holder, kesehatan likuiditas → satu angka 0..1. */
+/** Volume ratio, holder growth, liquidity health → a single 0..1 number. */
 function onchainScore(symbol: string): number {
   const raw = fixtureOnchain(symbol);
   const volume = clamp01(raw.volumeRatio / 2);
@@ -53,10 +54,10 @@ function onchainScore(symbol: string): number {
   return clamp01(volume * 0.5 + holders * 0.25 + liquidity * 0.25);
 }
 
-/** Jumlah berita 24 jam terakhir dikalikan rata-rata sentimen → 0..1. */
+/** Count of news in the last 24 hours multiplied by average sentiment → 0..1. */
 function newsScore(count: number, avgSentiment: number): number {
   const volume = clamp01(count / 8);
-  // Sentimen −1..1 dipetakan ke 0..1; berita negatif tetap "panas".
+  // Sentiment −1..1 maps to 0..1; negative news is still "hot".
   const intensity = clamp01(Math.abs(avgSentiment) * 0.6 + 0.4);
   return clamp01(volume * intensity);
 }
@@ -90,8 +91,9 @@ export async function runHeat(): Promise<void> {
     return {
       symbol,
       score: Number(score.toFixed(1)),
-      // Komponen penyusun disimpan, bukan cuma skor akhir — ini yang nanti
-      // dipakai Robinchan untuk menjelaskan kenapa sesuatu panas (brief §13).
+      // The underlying components are stored, not just the final score —
+      // this is what Robinchan will later use to explain why something is
+      // hot (brief §13).
       components,
       computedAt,
     };
@@ -99,5 +101,5 @@ export async function runHeat(): Promise<void> {
 
   await db.upsertHeat(rows);
   await getCache().set(cacheKey('heat', 'top'), rows, HEAT_TTL_SEC);
-  log.info('heat', `${rows.length} simbol dihitung (social ${socialEnabled() ? 'on' : 'off'})`);
+  log.info('heat', `${rows.length} symbols computed (social ${socialEnabled() ? 'on' : 'off'})`);
 }

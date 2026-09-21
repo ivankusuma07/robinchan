@@ -24,23 +24,23 @@ export type NewsQuery = {
 
 export interface Db {
   migrate(): Promise<void>;
-  /** Mengembalikan jumlah baris yang benar-benar baru setelah dedupe. */
+  /** Returns the count of rows that were genuinely new after dedupe. */
   upsertNews(items: NewsItem[]): Promise<number>;
   listNews(query: NewsQuery): Promise<NewsItem[]>;
   upsertHeat(rows: HeatRow[]): Promise<void>;
   listHeat(limit: number): Promise<HeatRow[]>;
   upsertCalendar(events: CalendarEvent[]): Promise<void>;
   listCalendar(limit: number): Promise<CalendarEvent[]>;
-  /** chat_messages 30 hari, news_items 90 hari (brief §10). */
+  /** chat_messages 30 days, news_items 90 days (brief §10). */
   pruneRetention(): Promise<void>;
   ping(): Promise<boolean>;
   close(): Promise<void>;
 }
 
 /**
- * Provider sering mengirim cerita yang sama dengan id berbeda, jadi selain
- * `external_id` kita simpan hash judul yang dinormalisasi dan menolak duplikat
- * dalam jendela 6 jam (brief §10).
+ * Providers often send the same story under a different id, so besides
+ * `external_id` we store a hash of the normalized title and reject
+ * duplicates within a 6-hour window (brief §10).
  */
 const DEDUPE_WINDOW_MS = 6 * 60 * 60 * 1000;
 
@@ -234,7 +234,7 @@ function rowToNews(r: Record<string, unknown>): NewsItem {
 }
 
 /* ------------------------------------------------------------------ */
-/* Fallback berkas — dipakai kalau DATABASE_URL kosong                 */
+/* File fallback — used when DATABASE_URL is empty                     */
 /* ------------------------------------------------------------------ */
 
 type StoredNews = NewsItem & { hash: string };

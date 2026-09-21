@@ -1,10 +1,10 @@
 import type { SourceStatus, TierId } from './types.js';
 
-/** Ambang pemetaan sentimen ke tiga warna titik (brief §9). */
+/** Thresholds mapping sentiment to three dot colors (brief §9). */
 export const SENTIMENT_POS = 0.15;
 export const SENTIMENT_NEG = -0.15;
 
-/** Simbol yang dipantau di fase 1. */
+/** Symbols watched in phase 1. */
 export const WATCHED_SYMBOLS = [
   'AAPL',
   'NVDA',
@@ -38,11 +38,11 @@ export const INDEX_NAMES: Record<string, string> = {
   RCHAN: '$RCHAN / USD',
 };
 
-/** Delapan slot di kartu "Sumber yang dipantau" (brief §6). */
+/** Eight slots in the "Sources monitored" card (brief §6). */
 export const SOURCE_SLOTS: Array<Pick<SourceStatus, 'id' | 'label'>> = [
-  { id: 'finnhub-quote', label: 'Finnhub — harga' },
-  { id: 'finnhub-news', label: 'Finnhub — berita' },
-  { id: 'finnhub-calendar', label: 'Finnhub — kalender' },
+  { id: 'finnhub-quote', label: 'Finnhub — prices' },
+  { id: 'finnhub-news', label: 'Finnhub — news' },
+  { id: 'finnhub-calendar', label: 'Finnhub — calendar' },
   { id: 'sec-edgar', label: 'SEC EDGAR' },
   { id: 'dexscreener', label: 'DexScreener' },
   { id: 'youtube', label: 'YouTube embed' },
@@ -57,7 +57,7 @@ export const TIER_LABELS: Record<TierId, string> = {
   tier3: 'Tier 3',
 };
 
-/** Interval polling frontend, milidetik (brief §6). */
+/** Frontend polling intervals, milliseconds (brief §6). */
 export const POLL_MS = {
   indices: 15_000,
   news: 30_000,

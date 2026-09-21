@@ -7,20 +7,20 @@ import { PageHeader } from '@/components/ui';
 
 export const metadata: Metadata = {
   title: 'Robinchan',
-  description: 'Companion Live2D yang membaca market dan membantu menyusun order.',
+  description: 'A Live2D companion that reads the market and helps build orders.',
 };
 
 /**
- * Halaman karakter (brief §5): stage Live2D 736px di kiri, panel chat di
- * kanan, tiga kartu tier di bawah.
+ * Character page (brief §5): 736px Live2D stage on the left, chat panel on
+ * the right, three tier cards below.
  */
 export default function RobinchanPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Karakter"
+        eyebrow="Character"
         title="Robinchan"
-        lead="Dia membaca market, menjelaskan kenapa sesuatu bergerak, dan menyusun order dari kalimat biasa. Yang tidak bisa dia lakukan: menandatangani apa pun atas namamu."
+        lead="She reads the market, explains why something is moving, and builds orders from plain sentences. What she can't do: sign anything on your behalf."
       />
 
       <div className="grid-stage items-stretch pb-4">
@@ -31,12 +31,12 @@ export default function RobinchanPage() {
       <div className="pt-4">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="t-eyebrow mb-2.5">Tier</p>
-            <h2 className="t-h3">Yang terbuka seiring saldo $RCHAN</h2>
+            <p className="t-eyebrow mb-2.5">Tiers</p>
+            <h2 className="t-h3">What unlocks as your $RCHAN balance grows</h2>
           </div>
           <p className="max-w-[420px] text-[12px] leading-relaxed text-text-3">
-            Ambang tiap tier dibaca dari saldo on-chain, bukan dari klaim di sisi browser. Angka
-            ambangnya belum final dan disimpan sebagai konfigurasi.
+            Each tier&apos;s threshold is read from your on-chain balance, not a claim made in the
+            browser. The threshold values aren&apos;t final yet and are stored as configuration.
           </p>
         </div>
 

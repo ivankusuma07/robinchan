@@ -7,22 +7,23 @@ import { formatPrice } from '@robinchan/shared';
 import { PulseDot, cx } from '@/components/ui';
 
 /**
- * Komponen paling sensitif di produk (brief §7).
+ * The most sensitive component in the product (brief §7).
  *
- * Aturan yang dikunci di sini:
- * - Semua nilai datang dari `quote`, yaitu respons server. Tidak ada angka yang
- *   dihitung ulang di client.
- * - Tombol tanda tangan mati sampai quote diterima dan selama belum kedaluwarsa.
- * - Masa berlaku quote ditampilkan sebagai hitung mundur; habis berarti mati
- *   dan minta quote ulang.
- * - Tidak ada tema karakter di kartu ini — tampilannya sama persis dengan atau
- *   tanpa Zundamon di ruangan (design.md §5).
+ * Rules locked in here:
+ * - Every value comes from `quote`, the server's response. Nothing is
+ *   recomputed on the client.
+ * - The sign button stays disabled until a quote is received, and while it's
+ *   expired.
+ * - The quote's validity window is shown as a countdown; once it hits zero,
+ *   the button dies and a fresh quote is required.
+ * - No character theming on this card — it looks identical whether or not
+ *   Zundamon is in the room (design.md §5).
  */
 export function OrderPreviewCard({
   quote,
   onSign,
   onRequote,
-  /** Dipakai di kartu demo Home yang memang statis dan tidak tersambung API. */
+  /** Used by the static Home demo card, which isn't wired to the API. */
   demo = false,
   className,
 }: {
@@ -40,18 +41,18 @@ export function OrderPreviewCard({
     return (
       <div className={cx('card-soft bg-surface-2 p-5', className)}>
         <p className="t-eyebrow mb-3">Order preview</p>
-        <p className="text-[13px] text-text-3">Menunggu quote dari server…</p>
+        <p className="text-[13px] text-text-3">Waiting for a quote from the server…</p>
       </div>
     );
   }
 
   const { intent } = quote;
-  const sideLabel = intent.side === 'buy' ? 'BELI' : 'JUAL';
+  const sideLabel = intent.side === 'buy' ? 'BUY' : 'SELL';
 
   return (
     <div
       className={cx('card-soft bg-surface-2 p-5', expired && 'border-border-soft', className)}
-      aria-label="Pratinjau order"
+      aria-label="Order preview"
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
@@ -71,7 +72,7 @@ export function OrderPreviewCard({
 
         {demo ? (
           <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-text-3">
-            contoh
+            example
           </span>
         ) : (
           <span
@@ -81,20 +82,20 @@ export function OrderPreviewCard({
             )}
           >
             {expired ? null : <PulseDot />}
-            {expired ? 'quote kedaluwarsa' : `${remaining ?? '--'}s`}
+            {expired ? 'quote expired' : `${remaining ?? '--'}s`}
           </span>
         )}
       </div>
 
       <dl className="space-y-2.5 border-t border-border-soft pt-4">
-        <Line label="Jumlah" value={`${intent.qty} unit`} />
-        <Line label="Harga entry" value={formatPrice(quote.estPrice)} />
+        <Line label="Quantity" value={`${intent.qty} unit`} />
+        <Line label="Entry price" value={formatPrice(quote.estPrice)} />
         {intent.limitPrice != null ? (
-          <Line label="Batas limit" value={formatPrice(intent.limitPrice)} />
+          <Line label="Limit price" value={formatPrice(intent.limitPrice)} />
         ) : null}
-        <Line label="Estimasi gas" value={formatPrice(quote.estGas)} muted />
-        <Line label="Fee protokol" value={formatPrice(quote.protocolFee)} muted />
-        <Line label="Estimasi total" value={formatPrice(quote.estTotal)} emphasis />
+        <Line label="Estimated gas" value={formatPrice(quote.estGas)} muted />
+        <Line label="Protocol fee" value={formatPrice(quote.protocolFee)} muted />
+        <Line label="Estimated total" value={formatPrice(quote.estTotal)} emphasis />
       </dl>
 
       {quote.warnings.length > 0 ? (
@@ -116,24 +117,24 @@ export function OrderPreviewCard({
           className="btn-primary flex-1 text-sm"
           title={
             demo
-              ? 'Kartu contoh — penandatanganan aktif di milestone M4'
+              ? 'Demo card — signing goes live in milestone M4'
               : expired
-                ? 'Quote sudah kedaluwarsa'
+                ? 'This quote has expired'
                 : undefined
           }
         >
-          Tanda tangan di wallet
+          Sign in wallet
         </button>
         {expired ? (
           <button type="button" onClick={onRequote} className="btn-ghost text-sm">
-            Quote ulang
+            Get new quote
           </button>
         ) : null}
       </div>
 
       <p className="mt-3 text-[11px] leading-relaxed text-text-3">
-        Kamu yang menandatangani. Server hanya menyusun payload dan tidak pernah bisa mengirim
-        transaksi atas namamu.
+        You&apos;re the one who signs. The server only builds the payload and can never send a
+        transaction on your behalf.
       </p>
     </div>
   );
@@ -165,7 +166,7 @@ function Line({
   );
 }
 
-/** Detik tersisa sampai `expiresAt`, dihitung di client dari timestamp UTC. */
+/** Seconds remaining until `expiresAt`, computed client-side from the UTC timestamp. */
 function useCountdown(expiresAt: string | null): number | null {
   const [remaining, setRemaining] = useState<number | null>(null);
 

@@ -1,9 +1,9 @@
 import { callProvider, fetchJson } from './adapter.js';
 
 /**
- * Harga $RCHAN on-chain. Alamat kontraknya baru ada setelah launch di Pons
- * (brief §18, keputusan terbuka #2), jadi tanpa `NEXT_PUBLIC_RCHAN_ADDRESS`
- * adaptor ini berstatus abu, bukan merah.
+ * $RCHAN on-chain price. The contract address only exists after launch on
+ * Pons (brief §18, open decision #2), so without
+ * `NEXT_PUBLIC_RCHAN_ADDRESS` this adapter's status is gray, not red.
  */
 const BASE = 'https://api.dexscreener.com/latest/dex/tokens';
 
@@ -26,7 +26,7 @@ export async function fetchTokenStats(): Promise<TokenStats> {
   return callProvider({ id: 'dexscreener', configured: Boolean(address) }, async () => {
     const body = await fetchJson<{ pairs?: DexPair[] }>(`${BASE}/${address}`);
     const pair = body.pairs?.[0];
-    if (!pair?.priceUsd) throw new Error('tidak ada pair untuk alamat ini');
+    if (!pair?.priceUsd) throw new Error('no pair found for this address');
     return {
       priceUsd: Number(pair.priceUsd),
       changePct24h: pair.priceChange?.h24 ?? 0,

@@ -1,11 +1,11 @@
 /**
- * Skor sentimen −1..1 berbasis leksikon.
+ * Lexicon-based sentiment score, −1..1.
  *
- * Ini penopang fase 1. Brief §11 menaruh Alpha Vantage News Sentiment di fase 2;
- * sampai adaptor itu aktif, feed tetap butuh angka supaya titik sentimen di
- * halaman Market dan komponen berita di heat score punya isi. Begitu
- * `ALPHAVANTAGE_API_KEY` terpasang, skor provider yang dipakai dan fungsi ini
- * turun jadi cadangan.
+ * This is the phase-1 stopgap. Brief §11 puts Alpha Vantage News Sentiment in
+ * phase 2; until that adapter is live, the feed still needs a number so the
+ * sentiment dots on the Market page and the news component of heat score
+ * have something to show. Once `ALPHAVANTAGE_API_KEY` is set, the
+ * provider's score is used and this function becomes the fallback.
  */
 
 const POSITIVE = [
@@ -87,7 +87,7 @@ export function scoreSentiment(text: string): number {
     else if (NEG.has(word)) score -= 1;
   }
   if (score === 0) return 0;
-  // Redam supaya satu kata kunci tidak langsung memaksimalkan skor.
+  // Dampen so a single keyword doesn't max out the score by itself.
   const normalized = score / Math.sqrt(Math.max(words.length, 8));
   return Math.max(-1, Math.min(1, Number(normalized.toFixed(3))));
 }

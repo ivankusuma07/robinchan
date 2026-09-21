@@ -1,6 +1,6 @@
 /**
- * Sparkline sebagai SVG polyline murni — tanpa library chart, karena yang
- * dibutuhkan cuma bentuk kasarnya di ruang 96×28.
+ * Sparkline as a plain SVG polyline — no chart library, since all that's
+ * needed is the rough shape in a 96×28 space.
  */
 export function Sparkline({
   points,

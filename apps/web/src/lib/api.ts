@@ -3,9 +3,9 @@ import type { ApiEnvelope } from '@robinchan/shared';
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 /**
- * Kalau API gagal, halaman tetap dirender dengan nilai kosong — tidak ada pesan
- * error di landing page dan layout tidak boleh melompat (brief §4). Jadi klien
- * ini tidak pernah melempar; ia mengembalikan amplop kosong bertanda `stale`.
+ * If the API fails, the page still renders with empty values — no error
+ * message on the landing page and the layout must not jump (brief §4). So
+ * this client never throws; it returns an empty envelope marked `stale`.
  */
 export async function getEnvelope<T>(
   path: string,
@@ -31,14 +31,15 @@ export function emptyEnvelope<T>(data: T): ApiEnvelope<T> {
   return { data, stale: true, asOf: new Date(0).toISOString() };
 }
 
-/** Belum pernah terisi sama sekali — beda dari "terisi tapi basi". */
+/** Never populated at all — different from "populated but stale". */
 export function isUnset(envelope: ApiEnvelope<unknown>): boolean {
   return Date.parse(envelope.asOf) === 0;
 }
 
 /**
- * Halaman marketing dirender statis lalu dihidrasi di client (brief §4), jadi
- * fetch di server hanya boleh memakai cache pendek — bukan `force-cache`.
+ * The marketing page renders statically and then hydrates on the client
+ * (brief §4), so server-side fetches must use a short cache — never
+ * `force-cache`.
  */
 export function ssr(seconds: number): RequestInit {
   return { next: { revalidate: seconds } } as RequestInit;

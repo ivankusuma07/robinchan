@@ -5,18 +5,19 @@ import { dirname, join } from 'node:path';
 import { dataDir } from './paths.js';
 
 /**
- * Cache key-value dengan TTL. Kunci mengikuti pola `rc:<domain>:<key>` (brief §8).
+ * Key-value cache with TTL. Keys follow the `rc:<domain>:<key>` pattern (brief §8).
  *
- * Implementasi Redis dipakai kalau REDIS_URL diisi. Kalau tidak, jatuh ke
- * berkas JSON di `.data/` — bukan in-memory, karena API dan worker adalah dua
- * proses terpisah dan harus tetap saling melihat data di lingkungan dev.
+ * The Redis implementation is used when REDIS_URL is set. Otherwise it falls
+ * back to a JSON file in `.data/` — not in-memory, because the API and
+ * worker are two separate processes and need to keep seeing each other's
+ * data in the dev environment.
  */
 export interface Cache {
   get<T>(key: string): Promise<T | null>;
-  /** Mengembalikan nilai plus umurnya dalam detik, null kalau tidak ada sama sekali. */
+  /** Returns the value plus its age in seconds, null if it doesn't exist at all. */
   getWithAge<T>(key: string): Promise<{ value: T; ageSec: number } | null>;
   set<T>(key: string, value: T, ttlSec: number): Promise<void>;
-  /** Hapus semua kunci dengan prefix. */
+  /** Delete all keys with a given prefix. */
   keys(prefix: string): Promise<string[]>;
   ping(): Promise<boolean>;
   close(): Promise<void>;
@@ -29,8 +30,8 @@ export function cacheKey(domain: string, key: string): string {
 type Entry = { v: unknown; writtenAt: number; expiresAt: number };
 
 /**
- * Nilai yang sudah lewat TTL tidak dibuang: brief §8 meminta API selalu
- * menyajikan data basi daripada gagal, jadi TTL hanya menandai umur.
+ * A value past its TTL isn't discarded: brief §8 asks the API to always
+ * serve stale data rather than fail, so TTL here only marks age.
  */
 class FileCache implements Cache {
   private readonly file: string;
@@ -108,8 +109,8 @@ class RedisCache implements Cache {
   }
 
   async set<T>(key: string, value: T, ttlSec: number): Promise<void> {
-    // Simpan dua kali umur TTL supaya data basi masih bisa disajikan saat
-    // worker telat, sesuai aturan "stale lebih baik daripada gagal".
+    // Store at ten times the TTL so stale data can still be served when the
+    // worker falls behind, per the "stale beats failing" rule.
     await this.redis.set(
       key,
       JSON.stringify({ v: value, writtenAt: Date.now() }),
@@ -148,7 +149,7 @@ export function getCache(): Cache {
   if (cached) return cached;
   const url = process.env.REDIS_URL;
   if (url) {
-    // Import dinamis supaya `ioredis` tidak pernah dimuat di mode file.
+    // Dynamic import so `ioredis` is never loaded in file mode.
     const require = createRequire(import.meta.url);
     const { default: Redis } = require('ioredis') as typeof import('ioredis');
     cached = new RedisCache(new Redis(url, { maxRetriesPerRequest: 3, lazyConnect: false }));

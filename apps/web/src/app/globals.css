@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 /**
- * Keyframes marquee ditulis langsung, di luar konfigurasi Tailwind.
- * `<Marquee>` memasang `animation-name` lewat style inline karena kecepatannya
- * prop runtime, dan Tailwind hanya menerbitkan @keyframes yang benar-benar
- * dirujuk utilitas `animate-*` — di config, keduanya akan ikut tree-shake.
+ * Marquee keyframes are written directly, outside the Tailwind config.
+ * `<Marquee>` sets `animation-name` via inline style since speed is a
+ * runtime prop, and Tailwind only emits @keyframes actually referenced by an
+ * `animate-*` utility — in the config, both would get tree-shaken.
  */
 @keyframes marquee-left {
   from {
@@ -42,7 +42,7 @@
     font-feature-settings: 'ss01';
   }
 
-  /* Angka selalu tabular supaya kolom harga tidak bergoyang saat nilainya ganti. */
+  /* Numbers are always tabular so price columns don't wobble when values change. */
   .font-mono,
   code,
   kbd {
@@ -61,7 +61,7 @@
     border-radius: 4px;
   }
 
-  /* Scrollbar tipis supaya panel padat tidak kehilangan lebar. */
+  /* Thin scrollbar so dense panels don't lose width. */
   * {
     scrollbar-width: thin;
     scrollbar-color: #242424 transparent;
@@ -83,13 +83,13 @@
 }
 
 @layer components {
-  /* ---- skala tipografi ---- */
+  /* ---- type scale ---- */
 
   .t-display {
     @apply font-display font-semibold text-text;
     font-size: clamp(2.25rem, 1.6rem + 2.2vw, 3.5rem);
     line-height: 1.06;
-    /* design.md §2: tracking sedikit lebih lega di headline besar. */
+    /* design.md §2: slightly looser tracking on large headlines. */
     letter-spacing: 0.006em;
   }
 
@@ -106,7 +106,7 @@
     line-height: 1.3;
   }
 
-  /* Label kecil huruf besar — idiom terminal, dipakai untuk judul kartu. */
+  /* Small uppercase label — terminal idiom, used for card titles. */
   .t-eyebrow {
     @apply font-mono uppercase text-text-3;
     font-size: 0.6875rem;
@@ -132,7 +132,7 @@
     letter-spacing: -0.01em;
   }
 
-  /* ---- permukaan ---- */
+  /* ---- surfaces ---- */
 
   .card {
     @apply rounded-card border border-border bg-surface;
@@ -142,7 +142,7 @@
     @apply rounded-panel border border-border bg-surface;
   }
 
-  /* Baris tabel dan daftar padat tetap lebih tajam (design.md §2). */
+  /* Table rows and dense lists stay sharper (design.md §2). */
   .row-dense {
     @apply rounded-row;
   }
@@ -157,7 +157,7 @@
     line-height: 1;
   }
 
-  /* ---- kontrol ---- */
+  /* ---- controls ---- */
 
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-full font-medium transition-colors;
@@ -202,7 +202,7 @@
     @apply text-text-3;
   }
 
-  /* Data basi diredupkan, bukan disembunyikan (brief §8). */
+  /* Stale data is dimmed, not hidden (brief §8). */
   .is-stale {
     opacity: 0.55;
   }
@@ -254,7 +254,7 @@
   }
 }
 
-/* Semua gerak dekoratif berhenti — brief §7 dan design.md §8. */
+/* All decorative motion stops — brief §7 and design.md §8. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

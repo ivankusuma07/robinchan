@@ -1,12 +1,13 @@
 import { PodIcon } from '@/components/icons';
 
 /**
- * Avatar Robinchan di daftar pesan.
+ * Robinchan's avatar in the message list.
  *
- * Cincin tipis `companion-pink` mengikuti warna ribbon karakter aslinya
- * (design.md §5) tanpa membawa pink itu masuk ke isi pesan. Isinya masih glyph
- * polong edamame, bukan likeness Zundamon — itu ditunda sampai poin lisensi di
- * design.md §9 selesai, dan diganti di satu tempat ini saja.
+ * The thin `companion-pink` ring echoes the character's ribbon color
+ * (design.md §5) without letting pink bleed into the message content itself.
+ * The glyph inside is a generic bot icon, not Zundamon's likeness — that's
+ * on hold until the licensing items in design.md §9 clear, and swapping it
+ * in later only touches this one place.
  */
 export function Avatar({ size = 28 }: { size?: number }) {
   return (

@@ -3,13 +3,14 @@ import type { MediaChannel, MediaClip } from '@robinchan/shared';
 import { callProvider, fetchJson } from './adapter.js';
 
 /**
- * Stream 24 jam kadang diganti pemiliknya, jadi `videoId` tidak boleh
- * di-hardcode di frontend (brief §6). Worker yang menyelesaikannya dari
- * channelId lewat YouTube Data API.
+ * 24-hour streams sometimes get swapped out by their owners, so `videoId`
+ * must never be hardcoded on the frontend (brief §6). The worker resolves
+ * it from a channelId via the YouTube Data API.
  *
- * Tanpa `YOUTUBE_API_KEY`, `videoId` sengaja dikosongkan supaya frontend jatuh
- * ke poster statis + tombol "Buka di YouTube" — jalur fallback yang memang
- * diwajibkan brief, bukan id palsu yang akan gagal dimuat diam-diam.
+ * Without `YOUTUBE_API_KEY`, `videoId` is deliberately left empty so the
+ * frontend falls back to a static poster + "Open on YouTube" button — a
+ * fallback path the brief actually requires, not a fake id that would fail
+ * to load silently.
  */
 const CHANNELS: Array<{
   id: string;
@@ -86,7 +87,7 @@ export async function fetchChannels(): Promise<MediaChannel[]> {
       return resolved;
     });
   } catch {
-    // Daftar channel tetap dikembalikan; hanya id stream aktifnya yang hilang.
+    // The channel list still comes back; only the active stream id is missing.
     return offline;
   }
 }
@@ -104,17 +105,17 @@ export async function fetchClips(): Promise<MediaClip[]> {
         if (!videoId) continue;
         out.push({
           id: `yt_${videoId}`,
-          title: item.snippet?.title ?? 'Tanpa judul',
+          title: item.snippet?.title ?? 'Untitled',
           channel: item.snippet?.channelTitle ?? c.label,
           videoId,
-          // Durasi butuh panggilan videos.list terpisah; belum sepadan di fase 1.
+          // Duration needs a separate videos.list call; not worth it in phase 1.
           durationSec: 0,
           publishedAt: item.snippet?.publishedAt ?? new Date().toISOString(),
           url: `https://www.youtube.com/watch?v=${videoId}`,
         });
       }
     }
-    if (out.length === 0) throw new Error('tidak ada klip terbaca');
+    if (out.length === 0) throw new Error('no clips read');
     return out.slice(0, 4);
   });
 }

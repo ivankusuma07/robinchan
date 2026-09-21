@@ -11,12 +11,12 @@ const query = z.object({
 });
 
 /**
- * Gating (brief §13): tanpa wallet, hanya lima simbol teratas dengan skor
- * dibulatkan ke kelipatan 10 dan tanpa rincian komponen.
+ * Gating (brief §13): without a wallet, only the top five symbols are
+ * returned, scores rounded to the nearest 10 and without component detail.
  *
- * Verifikasi tier sungguhan baru masuk di M3 — sampai itu ada, setiap
- * permintaan diperlakukan sebagai anonim. Ini sengaja: memulangkan skor penuh
- * karena client mengaku punya tier akan jadi gating palsu.
+ * Real tier verification only lands in M3 — until then, every request is
+ * treated as anonymous. This is deliberate: returning the full score because
+ * a client claims to have a tier would make the gating fake.
  */
 function toPublic(row: HeatRow): HeatScore {
   return {
@@ -32,7 +32,7 @@ function toPublic(row: HeatRow): HeatScore {
 export async function heatRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/heat', async (request) => {
     const parsed = query.safeParse(request.query);
-    if (!parsed.success) throw new ApiFailure('BAD_REQUEST', 'limit tidak valid');
+    if (!parsed.success) throw new ApiFailure('BAD_REQUEST', 'invalid limit');
 
     const limit = Math.min(parsed.data.limit, 5);
 

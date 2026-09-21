@@ -36,7 +36,7 @@ export function direction(value: number | null | undefined): Direction {
 
 export type Sentiment = 'pos' | 'neg' | 'neu';
 
-/** Brief §9: ambang −0.15 / +0.15. */
+/** Brief §9: threshold −0.15 / +0.15. */
 export function sentimentBucket(score: number | null | undefined): Sentiment {
   if (score == null || !Number.isFinite(score)) return 'neu';
   if (score > SENTIMENT_POS) return 'pos';
@@ -45,20 +45,20 @@ export function sentimentBucket(score: number | null | undefined): Sentiment {
 }
 
 /**
- * Waktu relatif dihitung dari timestamp UTC di sisi client (brief §6),
- * bukan dikirim server, supaya tidak ikut basi saat respons di-cache.
+ * Relative time is computed from the UTC timestamp on the client (brief §6),
+ * not sent by the server, so it doesn't go stale when the response is cached.
  */
 export function relativeTime(iso: string, now: number = Date.now()): string {
   const then = Date.parse(iso);
   if (Number.isNaN(then)) return '—';
   const sec = Math.max(0, Math.round((now - then) / 1000));
-  if (sec < 45) return 'baru saja';
+  if (sec < 45) return 'just now';
   const min = Math.round(sec / 60);
-  if (min < 60) return `${min}m lalu`;
+  if (min < 60) return `${min}m ago`;
   const hour = Math.round(min / 60);
-  if (hour < 24) return `${hour}j lalu`;
+  if (hour < 24) return `${hour}h ago`;
   const day = Math.round(hour / 24);
-  return `${day}h lalu`;
+  return `${day}d ago`;
 }
 
 export function formatClock(iso: string): string {

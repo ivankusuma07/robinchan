@@ -15,14 +15,14 @@ import { StaleBadge, cx } from '@/components/ui';
 import { isUnset } from '@/lib/api';
 import { usePoll } from '@/lib/usePoll';
 
-/** Index strip: 5 kartu + sparkline, polling 15 detik (brief §6). */
+/** Index strip: 5 cards + sparkline, polling every 15 seconds (brief §6). */
 export function IndexStrip({ initial }: { initial: ApiEnvelope<MarketIndex[]> }) {
   const envelope = usePoll<MarketIndex[]>('/api/market/indices', initial, POLL_MS.indices);
   const rows = envelope.data;
   const stale = envelope.stale && !isUnset(envelope);
 
   return (
-    <section aria-label="Index utama" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <section aria-label="Key indices" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
       {rows.length === 0
         ? INDEX_SYMBOLS.map((symbol) => <IndexCardEmpty key={symbol} symbol={symbol} />)
         : rows

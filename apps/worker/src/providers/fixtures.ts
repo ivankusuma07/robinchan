@@ -6,10 +6,10 @@ import { shorten } from './finnhub.js';
 import type { RawQuote } from './finnhub.js';
 
 /**
- * Data palsu untuk lingkungan `dev` (brief §16: "data provider dipalsukan").
- * Dipakai hanya kalau adaptor sungguhan gagal atau belum dikonfigurasi, dan
- * selalu menandai dirinya sendiri lewat field `source` supaya tidak pernah
- * tertukar dengan data nyata di staging atau production.
+ * Fake data for the `dev` environment (brief §16: "provider data is faked").
+ * Only used when the real adapter fails or isn't configured, and always
+ * marks itself via the `source` field so it never gets mistaken for real
+ * data on staging or production.
  */
 
 export function fixturesEnabled(): boolean {
@@ -32,7 +32,7 @@ const BASE_PRICES: Record<string, number> = {
   RCHAN: 0.0421,
 };
 
-/** Random walk deterministik per menit supaya angka bergerak tapi tidak liar. */
+/** Deterministic random walk per minute so numbers move but don't go wild. */
 function drift(symbol: string, at = Date.now()): number {
   const seed = [...symbol].reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 7);
   const minute = Math.floor(at / 60_000);
@@ -156,40 +156,40 @@ export function fixtureCalendar(): CalendarEvent[] {
     {
       id: 'fx_cal_1',
       date: day(1),
-      title: 'NVDA — laporan Q3',
-      subtitle: 'Setelah pasar tutup · estimasi EPS 1.24',
+      title: 'NVDA — Q3 report',
+      subtitle: 'After market close · EPS estimate 1.24',
       kind: 'earnings',
       symbol: 'NVDA',
     },
     {
       id: 'fx_cal_2',
       date: day(2),
-      title: 'Rilis CPI Amerika Serikat',
-      subtitle: '19:30 WIB · konsensus 2,7% y/y',
+      title: 'US CPI release',
+      subtitle: '08:30 ET · consensus 2.7% y/y',
       kind: 'macro',
       symbol: null,
     },
     {
       id: 'fx_cal_3',
       date: day(4),
-      title: 'AAPL — laporan Q4',
-      subtitle: 'Setelah pasar tutup · estimasi EPS 2.38',
+      title: 'AAPL — Q4 report',
+      subtitle: 'After market close · EPS estimate 2.38',
       kind: 'earnings',
       symbol: 'AAPL',
     },
     {
       id: 'fx_cal_4',
       date: day(6),
-      title: 'Keputusan suku bunga FOMC',
-      subtitle: '01:00 WIB · pasar memperkirakan tahan',
+      title: 'FOMC rate decision',
+      subtitle: '14:00 ET · market expects a hold',
       kind: 'macro',
       symbol: null,
     },
     {
       id: 'fx_cal_5',
       date: day(9),
-      title: 'Unlock treasury $RCHAN',
-      subtitle: 'Tahap kedua · dipantau di halaman Buyback',
+      title: '$RCHAN treasury unlock',
+      subtitle: 'Second tranche · tracked on the Buyback page',
       kind: 'chain',
       symbol: 'RCHAN',
     },
@@ -199,19 +199,19 @@ export function fixtureCalendar(): CalendarEvent[] {
 export function fixtureClips(): MediaClip[] {
   const now = Date.now();
   return [
-    { title: 'Ringkasan penutupan pasar', channel: 'Bloomberg TV', mins: 8 },
+    { title: 'Market close recap', channel: 'Bloomberg TV', mins: 8 },
     {
-      title: 'Apa yang bergerak sebelum bel buka',
+      title: "What's moving before the opening bell",
       channel: 'Yahoo Finance',
       mins: 12,
     },
     {
-      title: 'Tokenized equity: siapa yang benar-benar untung',
+      title: 'Tokenized equity: who actually profits',
       channel: 'CoinDesk',
       mins: 17,
     },
     {
-      title: 'Wawancara: arah kebijakan the Fed',
+      title: 'Interview: where Fed policy goes next',
       channel: 'Reuters',
       mins: 21,
     },
@@ -226,7 +226,7 @@ export function fixtureClips(): MediaClip[] {
   }));
 }
 
-/** Statistik on-chain palsu untuk komponen heat score saat alamat kontrak belum ada. */
+/** Fake on-chain stats for the heat-score component while there's no contract address yet. */
 export function fixtureOnchain(symbol: string): {
   volumeRatio: number;
   holderGrowth: number;

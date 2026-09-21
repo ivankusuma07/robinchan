@@ -14,9 +14,9 @@ type StoredHealth = {
 const OK_WINDOW_MS = 5 * 60_000;
 
 /**
- * Hijau kalau provider merespons dalam 5 menit terakhir, abu kalau belum
- * dikonfigurasi, merah kalau gagal (brief §6). Kartu ini sekaligus panel
- * diagnosa waktu ada feed yang mati.
+ * Green if the provider responded within the last 5 minutes, gray if it
+ * isn't configured, red if it failed (brief §6). This card also doubles as
+ * the diagnostic panel when a feed goes down.
  */
 export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/sources/status', async () => {
@@ -30,7 +30,7 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
             ...slot,
             state: 'idle' as const,
             lastOkAt: null,
-            note: 'belum dikonfigurasi',
+            note: 'not configured',
           };
         }
 
@@ -38,15 +38,15 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
           health.lastOkAt != null && Date.now() - Date.parse(health.lastOkAt) < OK_WINDOW_MS;
 
         let state: SourceState = health.state;
-        // Pernah hijau tapi sudah lewat lima menit tanpa respons baru: turunkan
-        // ke merah, jangan biarkan status lama terlihat masih sehat.
+        // Was green but it's been over five minutes with no fresh response:
+        // downgrade to red, don't let stale status look healthy.
         if (health.state === 'ok' && !fresh) state = 'down';
 
         return {
           ...slot,
           state,
           lastOkAt: health.lastOkAt,
-          note: state === 'down' && health.state === 'ok' ? 'tidak ada respons baru' : health.note,
+          note: state === 'down' && health.state === 'ok' ? 'no fresh response' : health.note,
         };
       }),
     );

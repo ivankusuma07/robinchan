@@ -5,11 +5,11 @@ import { OrderPreviewCard } from '@/components/OrderPreviewCard';
 import { CardHead, cx } from '@/components/ui';
 
 /**
- * Kartu "Ngobrol, jadi order" (brief §4 blok 3).
+ * "Talk it into an order" card (brief §4 block 3).
  *
- * Isinya tetap dan di-hardcode. Ini bukan chat sungguhan dan tidak tersambung
- * ke API — chat yang asli ada di `/robinchan`. Karena statis, kartu ini boleh
- * jadi yang paling "didesain" di halaman ini (design.md §4).
+ * Its content is fixed and hardcoded. This isn't a real chat and isn't wired
+ * to the API — the real one lives on `/robinchan`. Because it's static, this
+ * card can afford to be the most "designed" one on the page (design.md §4).
  */
 
 const DEMO_QUOTE: OrderQuote = {
@@ -31,15 +31,15 @@ const DEMO_QUOTE: OrderQuote = {
 type Turn = { from: 'user' | 'chan'; text: string };
 
 const TURNS: Turn[] = [
-  { from: 'user', text: 'nvda lagi gimana hari ini?' },
+  { from: 'user', text: "how's nvda doing today?" },
   {
     from: 'chan',
-    text: 'Naik 2,1% sejak pembukaan. Ada satu filing 8-K soal perjanjian pasokan baru sejam lalu, dan volumenya di atas rata-rata 20 hari.',
+    text: 'Up 2.1% since the open. There was an 8-K filing about a new supply agreement an hour ago, and volume is above the 20-day average.',
   },
-  { from: 'user', text: 'ambil 4 lembar kalau turun ke 172' },
+  { from: 'user', text: 'grab 4 shares if it drops to 172' },
   {
     from: 'chan',
-    text: 'Oke — limit beli 4 NVDA di 172. Aku susunkan quote-nya, tapi yang menekan tanda tangan tetap kamu.',
+    text: "Got it — limit buy 4 NVDA at 172. I'll put the quote together, but you're still the one who presses sign.",
   },
 ];
 
@@ -47,8 +47,8 @@ export function ChatDemo() {
   return (
     <section className="card overflow-hidden">
       <CardHead
-        title="Ngobrol, jadi order"
-        aside={<span className="font-mono text-[11px] text-text-3">contoh percakapan</span>}
+        title="Talk it into an order"
+        aside={<span className="font-mono text-[11px] text-text-3">example conversation</span>}
       />
 
       <div className="space-y-4 p-5">

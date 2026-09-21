@@ -8,19 +8,19 @@ import { TickerChip } from '@/components/TickerCard';
 import { usePoll } from '@/lib/usePoll';
 
 /**
- * Dua baris marquee (brief §4 blok 5): kartu ticker jalan ke kiri di atas,
- * chip contoh perintah jalan ke kanan di bawah.
+ * Two marquee rows (brief §4 block 5): ticker cards scroll left on top,
+ * example-command chips scroll right below.
  */
 
 const COMMANDS = [
-  'beli 2 AAPL di harga pasar',
-  'kenapa NVDA panas hari ini?',
-  'jual setengah posisi TSLA',
-  'ada filing baru buat COIN?',
-  'pasang limit beli MSFT di 505',
-  'ringkas berita chain 6 jam terakhir',
-  'bandingkan heat AAPL sama META',
-  'watchlist aku isinya apa aja?',
+  'buy 2 AAPL at market price',
+  'why is NVDA hot today?',
+  'sell half my TSLA position',
+  'any new filings for COIN?',
+  'set a limit buy on MSFT at 505',
+  'summarize chain news from the last 6 hours',
+  'compare heat on AAPL vs META',
+  "what's on my watchlist?",
 ];
 
 export function MarqueeRows({ initial }: { initial: ApiEnvelope<Ticker[]> }) {
@@ -28,11 +28,11 @@ export function MarqueeRows({ initial }: { initial: ApiEnvelope<Ticker[]> }) {
   const tickers = envelope.data;
 
   return (
-    <section className="space-y-3 py-4" aria-label="Ringkasan bergerak">
+    <section className="space-y-3 py-4" aria-label="Scrolling summary">
       {tickers.length > 0 ? (
-        <Marquee ariaLabel="Harga terkini" speed={52} direction="left" gap={12}>
-          {/* Lima ticker tidak cukup lebar untuk menutup track di 1440px, jadi
-              daftarnya diulang sampai melewati lebar kontainer. */}
+        <Marquee ariaLabel="Current prices" speed={52} direction="left" gap={12}>
+          {/* Five tickers aren't wide enough to fill the track at 1440px, so
+              the list repeats until it clears the container width. */}
           {[0, 1, 2].flatMap((pass) =>
             tickers.map((ticker) => (
               <TickerChip key={`${pass}-${ticker.symbol}`} ticker={ticker} />
@@ -43,7 +43,7 @@ export function MarqueeRows({ initial }: { initial: ApiEnvelope<Ticker[]> }) {
         <div className="h-[38px]" aria-hidden />
       )}
 
-      <Marquee ariaLabel="Contoh perintah" speed={64} direction="right" gap={10}>
+      <Marquee ariaLabel="Example commands" speed={64} direction="right" gap={10}>
         {COMMANDS.map((command) => (
           <span
             key={command}

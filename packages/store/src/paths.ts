@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 /**
- * API dan worker dijalankan dari direktori kerja masing-masing, jadi jalur
- * `.data/` harus dipatok ke akar monorepo — bukan ke `process.cwd()`.
+ * The API and worker each run from their own working directory, so the
+ * `.data/` path must be pinned to the monorepo root — not to `process.cwd()`.
  */
 export function repoRoot(): string {
   let dir = resolve(process.cwd());
@@ -16,7 +16,7 @@ export function repoRoot(): string {
         };
         if (parsed.workspaces) return dir;
       } catch {
-        /* lanjut naik */
+        /* keep walking up */
       }
     }
     const parent = dirname(dir);

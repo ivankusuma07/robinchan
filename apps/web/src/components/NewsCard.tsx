@@ -15,8 +15,8 @@ const CAT_TONE: Record<NewsItem['cat'], string> = {
 };
 
 /**
- * Satu baris feed berita (brief §6): badge kategori, judul maksimal dua baris,
- * ticker terkait, waktu relatif, dan titik sentimen.
+ * One row of the news feed (brief §6): category badge, title clamped to two
+ * lines, related tickers, relative time, and a sentiment dot.
  */
 export function NewsCard({ item, now }: { item: NewsItem; now: number | null }) {
   const href = safeUrl(item.url);
@@ -74,7 +74,7 @@ export function NewsCard({ item, now }: { item: NewsItem; now: number | null }) 
   );
 }
 
-/** Kartu klip "Sorotan" — varian kecil dari komponen yang sama. */
+/** "Highlights" clip card — a small variant of the same component. */
 export function ClipCard({ clip, now }: { clip: MediaClip; now: number | null }) {
   const href = safeUrl(clip.url);
   const title = sanitizeText(clip.title, 90);
