@@ -47,7 +47,9 @@
   code,
   kbd {
     font-variant-numeric: tabular-nums;
-    font-feature-settings: 'tnum' 1, 'zero' 1;
+    font-feature-settings:
+      'tnum' 1,
+      'zero' 1;
   }
 
   ::selection {
@@ -85,12 +87,51 @@
 @layer components {
   /* ---- type scale ---- */
 
+  /* Landing-page display scale (design.md §10). Only the marketing hero uses
+     this; the dashboard's largest type is still `.t-h2` at 24px. Up to 100px,
+     because Home's job is to state the thesis loudly enough that the headline
+     *is* the layout rather than a label sitting on top of one.
+
+     Tracking runs negative here, which contradicts design.md §2's "slightly
+     looser tracking on large headlines" — that rule was written for the old
+     56px ceiling and still holds at that size. Past ~72px the optical effect
+     inverts: the +0.006em that keeps a 56px heading from looking cramped
+     reads as gaps between letters at 100px. */
   .t-display {
     @apply font-display font-semibold text-text;
-    font-size: clamp(2.25rem, 1.6rem + 2.2vw, 3.5rem);
-    line-height: 1.06;
-    /* design.md §2: slightly looser tracking on large headlines. */
-    letter-spacing: 0.006em;
+    /* Floor is set by the longest line ("Read the market.", 16 characters)
+       against a 360px viewport minus the 40px of page gutter — a taller
+       floor overflows there, and the headline is hard-broken into three
+       lines so it can't reflow its way out. */
+    font-size: clamp(2.25rem, 1.05rem + 6.2vw, 6.25rem);
+    line-height: 0.98;
+    letter-spacing: -0.028em;
+  }
+
+  /* Marketing section headings. Deliberately not `.t-h2`/`.t-h3`, which are
+     shared with the dashboard (`PageHeader`, `TierCards`, `/robinchan`) and
+     have to stay small there — design.md §8's restraint rules still govern
+     those pages, and §10 only grants Home the extra latitude. */
+  .t-section {
+    @apply font-display font-semibold text-text;
+    font-size: clamp(1.875rem, 1.2rem + 2.4vw, 3rem);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+  }
+
+  /* Statement numerals for the proof band — mono, so they inherit the
+     tabular-figure settings the rest of the site's numbers use. */
+  .t-stat {
+    @apply font-mono text-text;
+    font-size: clamp(2.5rem, 1.5rem + 3.4vw, 4rem);
+    line-height: 1;
+    letter-spacing: -0.035em;
+  }
+
+  .t-lead {
+    @apply text-text-2;
+    font-size: clamp(1rem, 0.93rem + 0.3vw, 1.1875rem);
+    line-height: 1.6;
   }
 
   .t-h2 {
@@ -175,7 +216,11 @@
   }
 
   .btn-ghost {
-    @apply btn border border-border text-text;
+    /* Backdrop + blur even at rest, not just on hover — everywhere else
+       this sits on an already-dark surface so it's barely visible, but it
+       means a `btn-ghost` placed over something busier (the Home hero's
+       animated background) still reads clearly without a one-off override. */
+    @apply btn border border-border bg-bg/60 text-text backdrop-blur-sm;
   }
 
   .btn-ghost:hover:not(:disabled) {
@@ -260,6 +305,14 @@
     margin-inline: auto;
     width: 100%;
     max-width: 1112px;
+  }
+
+  /* Landing-page vertical rhythm (design.md §10). The dashboard stacks its
+     modules at 16–24px because density is the point there; Home reads as a
+     sequence of separate statements, and each one needs enough air around it
+     that you finish the previous thought before the next starts. */
+  .section-y {
+    padding-block: clamp(4.5rem, 2rem + 8vw, 9rem);
   }
 
   /* Scroll-reveal initial/entered state, driven by `useReveal` (design.md
