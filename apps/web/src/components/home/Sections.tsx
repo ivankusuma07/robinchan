@@ -1,33 +1,42 @@
 import Link from 'next/link';
 
-import { ChatIcon, GridIcon, KeyIcon } from '@/components/icons';
+import { ArrowRightIcon, ChatIcon, GridIcon, KeyIcon } from '@/components/icons';
+
+import { SectionHead } from './SectionHead';
 
 /**
  * Static Home blocks (brief §4 blocks 6–8). Their content is fixed and can be
  * hardcoded; since it never changes, the visual treatment is kept simple
  * (design.md §4) — though on the marketing page specifically, "simple"
- * still leaves room for a hover state and one accent color per card
+ * still leaves room for a hover state and one accent color per item
  * (design.md §10). Two of three lean on brand green; the middle one gets
  * `ember`, the marketing layout's one supporting color, so the row reads as
- * three distinct ideas rather than three copies of the same card.
+ * three distinct ideas rather than three copies of the same thing.
+ *
+ * These are numbered rules rather than cards on purpose. Home was running
+ * `card`/`card-soft` for every section, which flattened it — a page where
+ * each block has identical chrome gives a reader no way to tell the thesis
+ * from the footnote. The surrounding sections keep their panels; this one
+ * drops to a hairline and a numeral so the sequence reads as an argument in
+ * three parts.
  */
 
 const FEATURES = [
   {
     title: 'One screen, not six tabs',
-    body: 'Prices, SEC filings, news, and on-chain activity collected into one feed with relative time and sentiment — not six sources you have to stitch together yourself.',
+    body: 'Prices, SEC filings, news, and on-chain activity collected into one feed with relative time and sentiment, not six sources you have to stitch together yourself.',
     Icon: GridIcon,
     tone: 'accent',
   },
   {
     title: 'Commands in plain sentences',
-    body: 'Write what you want in normal language. If anything is unclear, Robinchan asks back — it never guesses, because guessing wrong here means you lose money.',
+    body: 'Write what you want in normal language. If anything is unclear, Robinchan asks back, it never guesses, because guessing wrong here means you lose money.',
     Icon: ChatIcon,
     tone: 'ember',
   },
   {
     title: 'Keys stay in your hands',
-    body: 'The server builds the transaction payload, then stops there. No private key, seed phrase, or session key is ever stored — every transaction needs a fresh signature from you.',
+    body: 'The server builds the transaction payload, then stops there. No private key, seed phrase, or session key is ever stored, every transaction needs a fresh signature from you.',
     Icon: KeyIcon,
     tone: 'accent',
   },
@@ -35,38 +44,48 @@ const FEATURES = [
 
 const TONE_STYLES = {
   accent: {
-    badge: 'bg-accent/10 text-accent',
-    hoverBorder: 'hover:border-accent/40',
-    hoverShadow: 'hover:shadow-[0_0_28px_rgba(123,224,123,0.10)]',
+    mark: 'text-accent',
+    rule: 'group-hover:border-accent',
+    iconHover: 'group-hover:text-accent',
   },
   ember: {
-    badge: 'bg-ember/10 text-ember',
-    hoverBorder: 'hover:border-ember/40',
-    hoverShadow: 'hover:shadow-[0_0_28px_rgba(242,166,90,0.10)]',
+    mark: 'text-ember',
+    rule: 'group-hover:border-ember',
+    iconHover: 'group-hover:text-ember',
   },
-} satisfies Record<string, { badge: string; hoverBorder: string; hoverShadow: string }>;
+  /* Written out in full rather than composed at runtime — Tailwind's JIT
+     scans source text for class names, so a template-built `group-hover:...`
+     never gets emitted. */
+} satisfies Record<string, { mark: string; rule: string; iconHover: string }>;
 
 export function FeatureCards() {
   return (
-    <section className="grid gap-4 py-4 md:grid-cols-3" aria-label="Core capabilities">
-      {FEATURES.map(({ title, body, Icon, tone }) => {
+    <ol className="grid gap-12 md:grid-cols-3 md:gap-8" aria-label="Core capabilities">
+      {FEATURES.map(({ title, body, Icon, tone }, i) => {
         const styles = TONE_STYLES[tone];
         return (
-          <article
+          <li
             key={title}
-            className={`card-soft group flex flex-col p-6 transition-all duration-300 hover:-translate-y-1 ${styles.hoverBorder} ${styles.hoverShadow}`}
+            className={`group border-t-2 border-border pt-7 transition-colors duration-300 ${styles.rule}`}
           >
-            <span
-              className={`mb-5 flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110 ${styles.badge}`}
-            >
-              <Icon />
-            </span>
-            <h3 className="t-h3 mb-3">{title}</h3>
-            <p className="t-small text-[13px] leading-relaxed">{body}</p>
-          </article>
+            <div className="mb-6 flex items-center justify-between">
+              <span
+                className={`font-mono text-[13px] tracking-[0.12em] transition-colors duration-300 ${styles.mark}`}
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className={`text-text-3 transition-colors duration-300 ${styles.iconHover}`}>
+                <Icon />
+              </span>
+            </div>
+            <h3 className="mb-3 font-display text-[21px] font-semibold leading-[1.2] tracking-[-0.01em]">
+              {title}
+            </h3>
+            <p className="text-[14px] leading-relaxed text-text-3">{body}</p>
+          </li>
         );
       })}
-    </section>
+    </ol>
   );
 }
 
@@ -93,34 +112,74 @@ const STEPS = [
 
 export function CapitalFlow() {
   return (
-    <section className="card p-6 md:p-8" aria-label="Capital flow">
-      <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="t-eyebrow mb-2.5">Capital flow</p>
-          <h2 className="t-h3">Where the fees go</h2>
-        </div>
-        <p className="max-w-[380px] text-[12px] leading-relaxed text-text-3">
-          Buyback is deliberately not automated. A server that can move funds means a server
-          holding keys, which conflicts with the non-custodial principle.
-        </p>
-      </div>
+    <section aria-label="Capital flow">
+      <SectionHead
+        eyebrow="Capital flow"
+        title="Where the fees go"
+        aside="Buyback is deliberately not automated. A server that can move funds is a server holding keys, which conflicts with the non-custodial principle."
+      />
 
-      <ol className="grid gap-px overflow-hidden rounded-panel bg-border-soft md:grid-cols-4">
+      <ol className="grid gap-px overflow-hidden rounded-card bg-border-soft md:grid-cols-4">
         {STEPS.map((step, i) => (
           <li
             key={step.label}
-            className="group bg-surface p-5 transition-colors duration-200 hover:bg-surface-2"
+            className="group bg-surface p-6 transition-colors duration-300 hover:bg-surface-2"
           >
-            <div className="mb-3 flex items-center gap-2.5">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full border border-border font-mono text-[10px] text-text-3 transition-colors duration-200 group-hover:border-accent/50 group-hover:text-accent">
-                {i + 1}
-              </span>
-              <span className="font-display text-[14px] font-medium">{step.label}</span>
-            </div>
-            <p className="text-[12px] leading-relaxed text-text-3">{step.body}</p>
+            <span className="mb-5 block font-mono text-[28px] leading-none tracking-[-0.03em] text-text-3 transition-colors duration-300 group-hover:text-accent">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <p className="mb-2 font-display text-[16px] font-semibold leading-tight">
+              {step.label}
+            </p>
+            <p className="text-[13px] leading-relaxed text-text-3">{step.body}</p>
           </li>
         ))}
       </ol>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * Closing call to action. The page used to run straight from the last
+ * content block into the footer's legal text, which left the strongest
+ * intent — someone who has read the whole argument and is convinced —
+ * with nothing to act on. This restates the thesis at section scale and
+ * repeats the hero's two routes.
+ */
+export function ClosingCta() {
+  return (
+    <section className="relative overflow-hidden rounded-card border border-border bg-surface px-6 py-14 text-center md:px-12 md:py-20">
+      {/* Single soft accent wash, clipped by the parent's rounding. The hero
+          owns the page's one animated background (design.md §10); this stays
+          static so it reads as an echo of it rather than a second event. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[280px] opacity-50"
+        style={{
+          background:
+            'radial-gradient(60% 100% at 50% 0%, rgba(123,224,123,0.16) 0%, rgba(123,224,123,0) 70%)',
+        }}
+      />
+      <div className="relative">
+        <h2 className="t-section mx-auto max-w-[18ch]">
+          Your keys. Your signature. <span className="text-accent">Your call.</span>
+        </h2>
+        <p className="t-lead mx-auto mt-6 max-w-[520px]">
+          Read the market with a companion who explains it, then sign the order yourself. Nothing
+          moves without you.
+        </p>
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <Link href="/robinchan" className="btn-primary group">
+            Talk to Robinchan
+            <ArrowRightIcon className="transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
+          <Link href="/market" className="btn-ghost">
+            Browse the market
+          </Link>
+        </div>
+      </div>
     </section>
   );
 }
@@ -158,8 +217,13 @@ export function SiteFooter() {
     <footer className="mt-4 border-t border-border-soft pt-10">
       <div className="grid gap-10 pb-10 md:grid-cols-[1fr_auto] md:gap-16">
         <div className="max-w-[420px]">
-          <p className="font-display text-[15px] font-semibold tracking-[0.01em]">Robinchan</p>
-          <p className="mt-3 text-[13px] leading-relaxed text-text-3">
+          {/* Wordmark at display weight rather than body size — the footer is
+              the last thing on the page and was previously its quietest
+              element, so the name landed smaller here than anywhere else. */}
+          <p className="font-display text-[32px] font-semibold leading-none tracking-[-0.02em]">
+            Robinchan
+          </p>
+          <p className="mt-4 text-[14px] leading-relaxed text-text-3">
             A character companion market for tokenized stocks on Robinhood Chain.
           </p>
         </div>

@@ -28,7 +28,7 @@ export function MarqueeRows({ initial }: { initial: ApiEnvelope<Ticker[]> }) {
   const tickers = envelope.data;
 
   return (
-    <section className="space-y-3 py-4" aria-label="Scrolling summary">
+    <section className="space-y-3" aria-label="Scrolling summary">
       {tickers.length > 0 ? (
         <Marquee ariaLabel="Current prices" speed={52} direction="left" gap={12}>
           {/* Five tickers aren't wide enough to fill the track at 1440px, so

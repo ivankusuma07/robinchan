@@ -39,7 +39,7 @@ const TURNS: Turn[] = [
   { from: 'user', text: 'grab 4 shares if it drops to 172' },
   {
     from: 'chan',
-    text: "Got it — limit buy 4 NVDA at 172. I'll put the quote together, but you're still the one who presses sign.",
+    text: "Got it, limit buy 4 NVDA at 172. I'll put the quote together, but you're still the one who presses sign.",
   },
 ];
 

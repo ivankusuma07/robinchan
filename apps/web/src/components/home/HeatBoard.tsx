@@ -40,7 +40,13 @@ export function HeatBoard({ initial }: { initial: ApiEnvelope<HeatScore[]> }) {
           : rows
               .slice(0, 5)
               .map((row, i) => (
-                <HeatRow key={row.symbol} row={row} stale={envelope.stale} grow={visible} delayMs={i * 60} />
+                <HeatRow
+                  key={row.symbol}
+                  row={row}
+                  stale={envelope.stale}
+                  grow={visible}
+                  delayMs={i * 60}
+                />
               ))}
       </div>
 
