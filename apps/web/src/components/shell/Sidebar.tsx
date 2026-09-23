@@ -1,9 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { CloseIcon, PodIcon } from '@/components/icons';
+import { CloseIcon } from '@/components/icons';
 import { SoonBadge, cx } from '@/components/ui';
 import { NAV_ITEMS } from '@/lib/nav';
 
@@ -20,9 +21,16 @@ export function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-topbar shrink-0 items-center gap-2.5 border-b border-border-soft px-6">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-accent-ink">
-          <PodIcon width={16} height={16} />
-        </span>
+        <Image
+          src="/img/navbar_icon.png"
+          alt=""
+          aria-hidden
+          width={32}
+          height={32}
+          priority
+          quality={95}
+          className="h-8 w-8"
+        />
         <span className="flex-1 font-display text-[15px] font-semibold tracking-[0.01em]">
           Robinchan
         </span>

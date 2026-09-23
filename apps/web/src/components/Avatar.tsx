@@ -1,22 +1,27 @@
-import { PodIcon } from '@/components/icons';
+import Image from 'next/image';
 
 /**
- * Robinchan's avatar in the message list.
+ * Robinchan's avatar in the message list — her full-body figure on
+ * transparency, with no ring or backing disc, standing beside her bubble.
  *
- * The thin `companion-pink` ring echoes the character's ribbon color
- * (design.md §5) without letting pink bleed into the message content itself.
- * The glyph inside is a generic bot icon, not Zundamon's likeness — that's
- * on hold until the licensing items in design.md §9 clear, and swapping it
- * in later only touches this one place.
+ * Points at the full-resolution source (`img/chat_icon.png`, 1024×1536)
+ * rather than a pre-shrunk copy: `next/image` resamples it server-side to
+ * the exact 1x/2x sizes the avatar needs, so it stays sharp on high-density
+ * screens without shipping the 1.4MB original. The art is 2:3, so `height`
+ * is the one size knob and width follows.
  */
-export function Avatar({ size = 28 }: { size?: number }) {
+export function Avatar({ height = 52 }: { height?: number }) {
+  const width = Math.round((height * 2) / 3);
   return (
-    <span
-      className="flex shrink-0 items-center justify-center rounded-full border border-companion-pink/30 bg-surface-2 text-accent"
-      style={{ width: size, height: size }}
+    <Image
+      src="/img/chat_icon.png"
+      alt=""
       aria-hidden
-    >
-      <PodIcon width={size * 0.55} height={size * 0.55} />
-    </span>
+      width={width}
+      height={height}
+      quality={95}
+      className="shrink-0 select-none self-start"
+      style={{ width, height }}
+    />
   );
 }

@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { ArrowRightIcon, CloseIcon, MenuIcon, PodIcon } from '@/components/icons';
+import { ArrowRightIcon, CloseIcon, MenuIcon } from '@/components/icons';
 import { cx } from '@/components/ui';
 
 const LINKS = [
@@ -48,9 +49,16 @@ export function LandingHeader() {
     >
       <div className="page-container flex h-[76px] items-center gap-4 px-5 lg:px-10">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-ink">
-            <PodIcon width={17} height={17} />
-          </span>
+          <Image
+            src="/img/navbar_icon.png"
+            alt=""
+            aria-hidden
+            width={36}
+            height={36}
+            priority
+            quality={95}
+            className="h-9 w-9"
+          />
           <span className="font-display text-[16px] font-semibold tracking-[0.01em]">
             Robinchan
           </span>
