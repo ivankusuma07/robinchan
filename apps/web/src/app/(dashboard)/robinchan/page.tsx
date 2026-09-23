@@ -17,11 +17,16 @@ export const metadata: Metadata = {
 export default function RobinchanPage() {
   return (
     <>
-      <PageHeader
-        eyebrow="Character"
-        title="Robinchan"
-        lead="She reads the market, explains why something is moving, and builds orders from plain sentences. What she can't do: sign anything on your behalf."
-      />
+      {/* `text-on-media` wraps rather than being passed to `PageHeader`:
+          it's shared, and text-shadow inherits, so a wrapper scopes it per
+          page without changing the shared component. */}
+      <div className="text-on-media">
+        <PageHeader
+          eyebrow="Character"
+          title="Robinchan"
+          lead="She reads the market, explains why something is moving, and builds orders from plain sentences. What she can't do: sign anything on your behalf."
+        />
+      </div>
 
       <div className="grid-stage items-stretch pb-4">
         <Live2DStage />
@@ -29,7 +34,7 @@ export default function RobinchanPage() {
       </div>
 
       <div className="pt-4">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+        <div className="text-on-media mb-5 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="t-eyebrow mb-2.5">Tiers</p>
             <h2 className="t-h3">What unlocks as your $RCHAN balance grows</h2>

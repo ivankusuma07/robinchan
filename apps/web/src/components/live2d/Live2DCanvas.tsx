@@ -132,8 +132,18 @@ export function Live2DCanvas({
         parent?.addEventListener('pointermove', onPointerMove);
         parent?.addEventListener('pointerleave', onPointerLeave);
 
-        setReady(true);
-        onStatus?.('ready');
+        // Drawable opacities (which `fit` uses to skip hidden poses) only
+        // reflect the model's real state after it has updated at least once,
+        // so fit again a couple of frames in — and hold the skeleton up
+        // until then, so the refit never shows as a jump.
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            if (disposed) return;
+            fit(model, app as PixiAppLike);
+            setReady(true);
+            onStatus?.('ready');
+          }),
+        );
 
         cleanupRef.current = () => {
           window.removeEventListener('resize', onResize);
@@ -184,8 +194,14 @@ type Live2DModelLike = {
   focus?: (x: number, y: number) => void;
   destroy?: () => void;
   internalModel?: {
+    localTransform?: { a: number; d: number; tx: number; ty: number };
+    getDrawableBounds?: (
+      index: number,
+    ) => { x: number; y: number; width: number; height: number };
     coreModel?: {
       setParameterValueById?: (id: string, value: number) => void;
+      getDrawableCount?: () => number;
+      getDrawableOpacity?: (index: number) => number;
     };
     motionManager?: {
       expressionManager?: {
@@ -195,35 +211,78 @@ type Live2DModelLike = {
   };
 };
 
+type Box = { left: number; top: number; right: number; bottom: number };
+
 /**
- * The Zundamon model is drawn full-body. The stage canvas is a fixed 400px
- * tall, so scale is primarily pinned to height and the anchor point shifted
- * upward so her face shows, not her shoes.
+ * The box the figure's *visible artwork* occupies, in the model's local
+ * (unscaled) coordinates.
  *
- * That height-only scale assumes a wide canvas (736px on desktop). Below
- * 1280px, `grid-stage` collapses to one column and the card's width drops to
- * the viewport width while its height stays 400px — the same height-based
- * scale then renders her at desktop size inside a much narrower frame, and
- * the card's `overflow-hidden` crops her into an oversized, zoomed-in mess
- * instead of letting her overflow visibly. Capping the rendered width to fit
- * the canvas (with a little breathing room) catches that: width becomes the
- * binding constraint on narrow screens, height stays the constraint on wide
- * ones, exactly like `object-fit: contain` would if we could use it on a
- * WebGL canvas.
+ * `model.width`/`height` can't be used for this: they come from the
+ * model's Live2D canvas, which the author sized for framing, not to the art —
+ * on this Zundamon build it ends above her knees, so fitting to it cropped
+ * her legs off. Instead this unions the bounds of every drawable mesh that
+ * is actually showing (opacity > 0 skips alternate hand/arm poses parked
+ * invisible), then maps them through `localTransform` into the same space
+ * the model's position and pivot work in.
+ */
+function artBounds(model: Live2DModelLike): Box | null {
+  const im = model.internalModel;
+  const core = im?.coreModel;
+  const t = im?.localTransform;
+  const count = core?.getDrawableCount?.() ?? 0;
+  if (!im?.getDrawableBounds || !t || !count) return null;
+
+  const box: Box = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+  for (let i = 0; i < count; i++) {
+    if ((core?.getDrawableOpacity?.(i) ?? 1) <= 0) continue;
+    const b = im.getDrawableBounds(i);
+    if (!b.width || !b.height) continue;
+    box.left = Math.min(box.left, b.x);
+    box.top = Math.min(box.top, b.y);
+    box.right = Math.max(box.right, b.x + b.width);
+    box.bottom = Math.max(box.bottom, b.y + b.height);
+  }
+  if (!Number.isFinite(box.left)) return null;
+
+  return {
+    left: box.left * t.a + t.tx,
+    right: box.right * t.a + t.tx,
+    top: box.top * t.d + t.ty,
+    bottom: box.bottom * t.d + t.ty,
+  };
+}
+
+/**
+ * The Zundamon model is shown full-body — head to shoes, the whole figure
+ * inside the canvas — standing on the stage backdrop rather than cropped.
+ *
+ * Framed on the measured artwork (`artBounds`), contained like
+ * `object-fit: contain` would if we could use it on a WebGL canvas: height
+ * binds on the wide desktop stage, width binds once `grid-stage` collapses
+ * to one column below 1280px and the card narrows. Local bounds don't change
+ * with the model's scale, so repeated fits on resize don't compound.
  */
 function fit(model: Live2DModelLike, app: PixiAppLike): void {
   const { width, height } = app.screen;
-  if (!model.width || !model.height) return;
+  const box =
+    artBounds(model) ??
+    (model.width && model.height
+      ? { left: 0, top: 0, right: model.width, bottom: model.height }
+      : null);
+  if (!box) return;
 
-  let scale = (height / model.height) * 1.55;
-  const maxRenderedWidth = width * 0.92;
-  if (model.width * scale > maxRenderedWidth) {
-    scale = maxRenderedWidth / model.width;
-  }
+  const artW = box.right - box.left;
+  const artH = box.bottom - box.top;
+  /* 5% headroom above her, 3% under her feet — she stands near the floor of
+     the frame rather than floating in the middle of it. */
+  const scale = Math.min((height * 0.92) / artH, (width * 0.9) / artW);
 
   model.scale.set(scale);
-  model.anchor?.set(0.5, 0.5);
-  model.position.set(width / 2, height * 0.62);
+  model.anchor?.set(0, 0);
+  model.position.set(
+    width / 2 - ((box.left + box.right) / 2) * scale,
+    height * 0.97 - box.bottom * scale,
+  );
 }
 
 function hasWebGL(): boolean {

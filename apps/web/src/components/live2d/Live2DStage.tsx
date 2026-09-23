@@ -3,6 +3,11 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
 
+import {
+  STAGE_BACKGROUNDS,
+  StageBackdrop,
+  type StageBackgroundId,
+} from '@/components/effects/StageBackdrop';
 import { PodIcon } from '@/components/icons';
 import { CardHead, Pill, cx } from '@/components/ui';
 
@@ -18,8 +23,11 @@ const Live2DCanvas = dynamic(() => import('./Live2DCanvas').then((m) => m.Live2D
   loading: () => null,
 });
 
+const BG_STORAGE_KEY = 'robinchan.stage-bg';
+
 /**
- * Live2D stage (brief §5): a 400px canvas inside a card, interaction held
+ * Live2D stage (brief §5): a full-body canvas over a selectable video
+ * backdrop (`<StageBackdrop>`), inside a card, interaction held
  * until the model finishes loading, and a skeleton — not a blank screen —
  * while it waits.
  */
@@ -27,6 +35,28 @@ export function Live2DStage() {
   const handle = useRef<Live2DHandle | null>(null);
   const [status, setStatus] = useState<StageStatus>('loading');
   const [mood, setMood] = useState<Mood>('relaxed');
+  const [bg, setBg] = useState<StageBackgroundId>('valley');
+
+  // The picked background is a per-viewer convenience, so it lives in
+  // localStorage — read after mount to keep SSR and first paint in sync, and
+  // wrapped because storage can be blocked or throw.
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(BG_STORAGE_KEY);
+      if (STAGE_BACKGROUNDS.some((b) => b.id === saved)) setBg(saved as StageBackgroundId);
+    } catch {
+      /* Storage unavailable — keep the default. */
+    }
+  }, []);
+
+  const pickBg = (next: StageBackgroundId) => {
+    setBg(next);
+    try {
+      window.localStorage.setItem(BG_STORAGE_KEY, next);
+    } catch {
+      /* Not persisted; the choice still applies for this visit. */
+    }
+  };
 
   const ready = status === 'ready';
   const noWebGL = status === 'unsupported' || status === 'failed';
@@ -63,11 +93,13 @@ export function Live2DStage() {
         }
       />
 
-      <div className="relative h-[400px] bg-surface-2">
+      {/* Tall enough that a full-body figure still has a readable face. */}
+      <div className="relative h-[480px] bg-surface-2 sm:h-[580px]">
+        <StageBackdrop active={bg} className="absolute inset-0" />
         {noWebGL ? (
           <StaticFallback reason={status} />
         ) : (
-          <Live2DCanvas handleRef={handle} onStatus={setStatus} className="h-full w-full" />
+          <Live2DCanvas handleRef={handle} onStatus={setStatus} className="relative h-full w-full" />
         )}
         {status === 'loading' ? <StageSkeleton /> : null}
       </div>
@@ -99,6 +131,29 @@ export function Live2DStage() {
               )}
             >
               {MOOD_LABEL[option]}
+            </button>
+          ))}
+        </div>
+
+        <div className="mb-3 mt-5">
+          <span className="t-eyebrow">Background</span>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {STAGE_BACKGROUNDS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => pickBg(option.id)}
+              aria-pressed={bg === option.id}
+              className={cx(
+                'min-h-[40px] rounded-full border px-4 text-[13px] transition-colors',
+                bg === option.id
+                  ? 'border-accent/45 bg-accent/[0.07] text-text'
+                  : 'border-border text-text-2 hover:border-text-3 hover:text-text',
+              )}
+            >
+              {option.label}
             </button>
           ))}
         </div>
@@ -146,7 +201,7 @@ function StageSkeleton() {
  */
 function StaticFallback({ reason }: { reason: StageStatus }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
+    <div className="relative flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
       <span className="flex h-[92px] w-[92px] items-center justify-center rounded-full border border-border bg-surface text-accent">
         <PodIcon width={38} height={38} />
       </span>
