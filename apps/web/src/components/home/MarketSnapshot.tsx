@@ -22,8 +22,13 @@ export function MarketSnapshot({ initial }: { initial: ApiEnvelope<Ticker[]> }) 
   const empty = rows.length === 0;
   const placeholders = WATCHED_SYMBOLS.slice(0, 5);
 
+  /* `shadow-glow-soft` is dropped here: it's a utility, so it wins the
+     cascade against `.card-glass`'s own box-shadow and would take the inset
+     top highlight with it. This panel sits over the hero's fiber field — the
+     one spot on the page where the blur has real content to refract — so it
+     needs that highlight more than it needed the glow. */
   return (
-    <section className="card flex h-[384px] w-full flex-col shadow-glow-soft">
+    <section className="card-glass flex h-[384px] w-full flex-col">
       <CardHead
         title="Market now"
         aside={

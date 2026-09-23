@@ -45,13 +45,13 @@ const TURNS: Turn[] = [
 
 export function ChatDemo() {
   return (
-    <section className="card overflow-hidden">
+    <section className="card-glass overflow-hidden">
       <CardHead
         title="Talk it into an order"
         aside={<span className="font-mono text-[11px] text-text-3">example conversation</span>}
       />
 
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 p-5"> 
         {TURNS.map((turn, i) => (
           <Bubble key={i} turn={turn} />
         ))}

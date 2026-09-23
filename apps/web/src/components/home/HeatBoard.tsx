@@ -21,7 +21,7 @@ export function HeatBoard({ initial }: { initial: ApiEnvelope<HeatScore[]> }) {
   const [ref, visible] = useReveal<HTMLElement>();
 
   return (
-    <section ref={ref} className="card flex flex-col">
+    <section ref={ref} className="card-glass flex flex-col">
       <CardHead
         title="Heat board"
         aside={

@@ -47,15 +47,15 @@ const STATS: Stat[] = [
 
 export function StatBand() {
   return (
-    <section
-      className="grid gap-px overflow-hidden rounded-card bg-border-soft sm:grid-cols-2 lg:grid-cols-4"
-      aria-label="What the system is"
-    >
+    /* Separated glass tiles rather than the hairline-divided slab this used
+       to be: that pattern draws its dividers by letting a `bg-border-soft`
+       parent show through 1px gaps between opaque cells. With translucent
+       cells the parent's fill shows through the cells themselves too, so
+       every tile picks up the divider colour and the glass muddies. Gaps do
+       the separating here instead. */
+    <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="What the system is">
       {STATS.map(({ value, label, note, accent }) => (
-        <div
-          key={label}
-          className="group bg-surface p-6 transition-colors duration-300 hover:bg-surface-2 lg:p-7"
-        >
+        <div key={label} className="card-glass card-glass-hover group p-6 lg:p-7">
           <p className={`t-stat mb-4 ${accent ? 'text-accent' : ''}`}>{value}</p>
           <p className="t-h3 mb-2">{label}</p>
           <p className="text-[13px] leading-relaxed text-text-3">{note}</p>

@@ -119,12 +119,11 @@ export function CapitalFlow() {
         aside="Buyback is deliberately not automated. A server that can move funds is a server holding keys, which conflicts with the non-custodial principle."
       />
 
-      <ol className="grid gap-px overflow-hidden rounded-card bg-border-soft md:grid-cols-4">
+      {/* Same reason as `<StatBand>`: the gap-px divider trick needs opaque
+          cells, so glass tiles are separated by real gaps instead. */}
+      <ol className="grid gap-3 md:grid-cols-4">
         {STEPS.map((step, i) => (
-          <li
-            key={step.label}
-            className="group bg-surface p-6 transition-colors duration-300 hover:bg-surface-2"
-          >
+          <li key={step.label} className="card-glass card-glass-hover group p-6">
             <span className="mb-5 block font-mono text-[28px] leading-none tracking-[-0.03em] text-text-3 transition-colors duration-300 group-hover:text-accent">
               {String(i + 1).padStart(2, '0')}
             </span>
@@ -150,7 +149,7 @@ export function CapitalFlow() {
  */
 export function ClosingCta() {
   return (
-    <section className="relative overflow-hidden rounded-card border border-border bg-surface px-6 py-14 text-center md:px-12 md:py-20">
+    <section className="card-glass relative overflow-hidden px-6 py-14 text-center md:px-12 md:py-20">
       {/* Single soft accent wash, clipped by the parent's rounding. The hero
           owns the page's one animated background (design.md §10); this stays
           static so it reads as an echo of it rather than a second event. */}
