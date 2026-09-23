@@ -25,7 +25,8 @@ import type { Program as OglProgram } from 'ogl';
 
 const hexToRgb = (hex: string): [number, number, number] => {
   const value = hex.trim().replace(/^#/, '');
-  const normalized = value.length === 3 ? value.replace(/./g, (channel) => channel + channel) : value;
+  const normalized =
+    value.length === 3 ? value.replace(/./g, (channel) => channel + channel) : value;
   const match = /^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalized);
   if (!match) return [1, 1, 1];
   return [
@@ -485,5 +486,10 @@ export default function GhostFibers({
     dpr,
   ]);
 
-  return <div ref={containerRef} className={`relative h-full w-full overflow-hidden ${className}`.trim()} />;
+  return (
+    <div
+      ref={containerRef}
+      className={`relative h-full w-full overflow-hidden ${className}`.trim()}
+    />
+  );
 }
