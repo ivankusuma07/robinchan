@@ -173,6 +173,19 @@
     letter-spacing: -0.01em;
   }
 
+  /* Legibility for text sitting directly on video or imagery (design.md
+     §10.3). The alternative is darkening the plate until the text is safe,
+     which is what the first pass did and why the footage was barely
+     visible — a shadow buys the same contrast locally, at the glyph edge,
+     instead of globally across the whole frame. Two shadows: a tight one
+     for edge definition and a wide soft one that lifts the text off busy
+     areas without reading as a drop shadow. */
+  .text-on-media {
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.5),
+      0 2px 20px rgba(0, 0, 0, 0.72);
+  }
+
   /* ---- surfaces ---- */
 
   .card {
@@ -181,6 +194,89 @@
 
   .card-soft {
     @apply rounded-panel border border-border bg-surface;
+  }
+
+  /* ---- glass surfaces (marketing layout only, design.md §10.2) ---- */
+
+  /* Deliberately a separate class rather than a change to `.card` — `.card`
+     is shared with `/market` and `/robinchan`, where §8's restraint rules
+     still apply and where dense data tables need a flat opaque surface to
+     stay legible.
+
+     Glass only reads as glass when there is something behind it to refract;
+     over flat `#0A0A0A` a backdrop-filter is a no-op and this degrades to a
+     slightly-off card. `<AmbientField>` exists to give the sections below
+     the hero that something. */
+  .card-glass {
+    @apply rounded-card border;
+    /* The pane is DARK, not white. This is the correction that makes the
+       whole thing read: in every reference glassmorphism composition the
+       card area is visibly darker and less saturated than the bright shapes
+       passing behind it. A panel built only from white overlay gets lighter
+       than its surroundings, which is how frosted acrylic behaves over a
+       light page and not how a smoked pane behaves over a dark one.
+       It also does the legibility work — body text sits on this, and the
+       blobs behind it are near-white at their cores. */
+    background-color: rgba(10, 10, 10, 0.45);
+    /* Directional sheen on top of that dark base: real glass is lit from one
+       side, and a uniform fill is the main reason translucency reads as
+       "card with opacity" rather than a surface catching light. */
+    background-image: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.03) 42%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.14);
+    /* 40px, deliberately far heavier than the 14–26px the blobs carry
+       themselves. The effect is the *difference* between the two: the same
+       shape stays crisp just outside the border and goes soft just inside
+       it. Matching the blob blur here would erase the comparison and the
+       panel would flatten out again. Saturation is pulled slightly *down*,
+       not up — the pane mutes what it transmits. */
+    backdrop-filter: blur(40px) saturate(125%);
+    -webkit-backdrop-filter: blur(40px) saturate(125%);
+    /* Top inset hairline is the lit edge; the bottom one is the thickness of
+       the pane. The outer shadow is wide and soft so panels lift off the
+       backdrop without stamping a hard edge onto it. */
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+      inset 0 -1px 0 0 rgba(0, 0, 0, 0.4),
+      0 24px 60px -30px rgba(0, 0, 0, 0.95);
+  }
+
+  .card-glass-hover {
+    @apply transition-all duration-300;
+  }
+
+  .card-glass-hover:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+    /* Lifts by letting slightly more through, not by adding more white. */
+    background-color: rgba(10, 10, 10, 0.36);
+  }
+
+  /* Firefox only shipped backdrop-filter on by default in 103, and it's
+     still disabled behind a flag in some builds. Without this the panels
+     fall back to 4% white over near-black — a barely-visible surface with
+     body text on it, which is a legibility bug, not a cosmetic one. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .card-glass {
+      @apply bg-surface;
+      /* The sheen has to be cleared, not just covered — `background-image`
+         paints over `background-color`, so leaving it set would keep the
+         translucent gradient sitting on top of the opaque fallback. */
+      background-image: none;
+      border-color: theme(colors.border);
+    }
+
+    /* The hover state has to be overridden too. Its translucent white is
+       computed against the page behind it, so left alone it would make an
+       opaque fallback card go *darker* on hover instead of lighter. */
+    .card-glass-hover:hover {
+      @apply bg-surface-2;
+      background-image: none;
+      border-color: theme(colors.text-3);
+    }
   }
 
   /* Table rows and dense lists stay sharper (design.md §2). */
