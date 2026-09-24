@@ -28,7 +28,7 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   html {
@@ -39,7 +39,9 @@
     @apply bg-bg text-text font-sans antialiased;
     font-size: 15px;
     line-height: 1.55;
-    font-feature-settings: 'ss01';
+    /* Inter: single-storey-free alternates off, contextual on — the
+       sheet's set is plain Inter. */
+    font-feature-settings: 'cv11', 'calt';
   }
 
   /* Numbers are always tabular so price columns don't wobble when values change. */
@@ -53,12 +55,12 @@
   }
 
   ::selection {
-    background: rgba(123, 224, 123, 0.24);
-    color: #ffffff;
+    background: rgba(212, 244, 80, 0.55);
+    color: #1f2937;
   }
 
   :focus-visible {
-    outline: 2px solid #7be07b;
+    outline: 2px solid #84cc16;
     outline-offset: 2px;
     border-radius: 4px;
   }
@@ -66,7 +68,7 @@
   /* Thin scrollbar so dense panels don't lose width. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #242424 transparent;
+    scrollbar-color: #d5ded6 transparent;
   }
 
   *::-webkit-scrollbar {
@@ -75,7 +77,7 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background: #242424;
+    background: #d5ded6;
     border-radius: 999px;
   }
 
@@ -104,8 +106,8 @@
        floor overflows there, and the headline is hard-broken into three
        lines so it can't reflow its way out. */
     font-size: clamp(2.25rem, 1.05rem + 6.2vw, 6.25rem);
-    line-height: 0.98;
-    letter-spacing: -0.028em;
+    line-height: 1;
+    letter-spacing: -0.04em;
   }
 
   /* Marketing section headings. Deliberately not `.t-h2`/`.t-h3`, which are
@@ -116,7 +118,7 @@
     @apply font-display font-semibold text-text;
     font-size: clamp(1.875rem, 1.2rem + 2.4vw, 3rem);
     line-height: 1.08;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
   }
 
   /* Statement numerals for the proof band — mono, so they inherit the
@@ -138,13 +140,14 @@
     @apply font-display font-semibold text-text;
     font-size: 1.5rem;
     line-height: 1.2;
-    letter-spacing: 0.003em;
+    letter-spacing: -0.015em;
   }
 
   .t-h3 {
     @apply font-display font-medium text-text;
     font-size: 1.0625rem;
     line-height: 1.3;
+    letter-spacing: -0.01em;
   }
 
   /* Small uppercase label — terminal idiom, used for card titles. */
@@ -180,16 +183,35 @@
      instead of globally across the whole frame. Two shadows: a tight one
      for edge definition and a wide soft one that lifts the text off busy
      areas without reading as a drop shadow. */
+  /* Light theme: the copy is dark, so the halo is light — a tight one for
+     edge definition and a wide one in the page background color. */
   .text-on-media {
     text-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.5),
-      0 2px 20px rgba(0, 0, 0, 0.72);
+      0 1px 2px rgba(255, 255, 255, 0.7),
+      0 2px 22px rgba(248, 250, 246, 0.95);
+  }
+
+  /* Brand-sheet "Accent Gradient" (lime → green) for display-size accent
+     words only. Deepened from the sheet's #A3E635 → #22C55E so it holds
+     3:1 on the page background — enough for large text, not for body copy,
+     which keeps `text-accent`. */
+  .text-accent-gradient {
+    background-image: linear-gradient(90deg, #65a30d 0%, #16a34a 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    /* A text-shadow paints *over* a text-clipped background, so the
+       inherited `.text-on-media` halo would wash the gradient out. */
+    text-shadow: none;
   }
 
   /* ---- surfaces ---- */
 
+  /* Cards are white on the sage page, lifted by a faint shadow as on the
+     brand sheet rather than by a dark border. */
   .card {
     @apply rounded-card border border-border bg-surface;
+    box-shadow: 0 1px 2px rgba(31, 41, 55, 0.04), 0 8px 24px -16px rgba(31, 41, 55, 0.12);
   }
 
   .card-soft {
@@ -209,40 +231,25 @@
      the hero that something. */
   .card-glass {
     @apply rounded-card border;
-    /* The pane is DARK, not white. This is the correction that makes the
-       whole thing read: in every reference glassmorphism composition the
-       card area is visibly darker and less saturated than the bright shapes
-       passing behind it. A panel built only from white overlay gets lighter
-       than its surroundings, which is how frosted acrylic behaves over a
-       light page and not how a smoked pane behaves over a dark one.
-       It also does the legibility work — body text sits on this, and the
-       blobs behind it are near-white at their cores. */
-    background-color: rgba(10, 10, 10, 0.45);
-    /* Directional sheen on top of that dark base: real glass is lit from one
-       side, and a uniform fill is the main reason translucency reads as
-       "card with opacity" rather than a surface catching light. */
+    /* Light theme: frosted white, as on the brand sheet — a mostly-opaque
+       white pane that lets the backdrop (video, blob field) through as a
+       soft tint rather than as detail. Opaque enough that body text on it
+       reads without depending on what happens to be behind. */
+    background-color: rgba(255, 255, 255, 0.72);
     background-image: linear-gradient(
       135deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.03) 42%,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.15) 45%,
       rgba(255, 255, 255, 0) 100%
     );
-    border-color: rgba(255, 255, 255, 0.14);
-    /* 40px, deliberately far heavier than the 14–26px the blobs carry
-       themselves. The effect is the *difference* between the two: the same
-       shape stays crisp just outside the border and goes soft just inside
-       it. Matching the blob blur here would erase the comparison and the
-       panel would flatten out again. Saturation is pulled slightly *down*,
-       not up — the pane mutes what it transmits. */
-    backdrop-filter: blur(40px) saturate(125%);
-    -webkit-backdrop-filter: blur(40px) saturate(125%);
-    /* Top inset hairline is the lit edge; the bottom one is the thickness of
-       the pane. The outer shadow is wide and soft so panels lift off the
-       backdrop without stamping a hard edge onto it. */
+    border-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    /* Lifted with a soft, cool shadow — on a light page depth comes from
+       shadow, not from a lit edge. */
     box-shadow:
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
-      inset 0 -1px 0 0 rgba(0, 0, 0, 0.4),
-      0 24px 60px -30px rgba(0, 0, 0, 0.95);
+      0 1px 2px rgba(31, 41, 55, 0.04),
+      0 12px 32px -12px rgba(31, 41, 55, 0.16);
   }
 
   .card-glass-hover {
@@ -250,32 +257,23 @@
   }
 
   .card-glass-hover:hover {
-    border-color: rgba(255, 255, 255, 0.22);
-    /* Lifts by letting slightly more through, not by adding more white. */
-    background-color: rgba(10, 10, 10, 0.36);
+    background-color: rgba(255, 255, 255, 0.86);
+    box-shadow:
+      0 1px 2px rgba(31, 41, 55, 0.05),
+      0 16px 36px -12px rgba(31, 41, 55, 0.2);
   }
 
-  /* Firefox only shipped backdrop-filter on by default in 103, and it's
-     still disabled behind a flag in some builds. Without this the panels
-     fall back to 4% white over near-black — a barely-visible surface with
-     body text on it, which is a legibility bug, not a cosmetic one. */
+  /* Without backdrop-filter (some Firefox builds) fall back to a plain
+     opaque card so text never sits on an unblurred busy backdrop. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .card-glass {
-      @apply bg-surface;
-      /* The sheen has to be cleared, not just covered — `background-image`
-         paints over `background-color`, so leaving it set would keep the
-         translucent gradient sitting on top of the opaque fallback. */
+      @apply border-border bg-surface;
       background-image: none;
-      border-color: theme(colors.border);
     }
 
-    /* The hover state has to be overridden too. Its translucent white is
-       computed against the page behind it, so left alone it would make an
-       opaque fallback card go *darker* on hover instead of lighter. */
     .card-glass-hover:hover {
-      @apply bg-surface-2;
+      @apply bg-surface;
       background-image: none;
-      border-color: theme(colors.text-3);
     }
   }
 
@@ -308,19 +306,18 @@
   }
 
   .btn-primary:hover:not(:disabled) {
-    box-shadow: 0 0 24px rgba(123, 224, 123, 0.22);
+    @apply bg-accent-2;
+    box-shadow: 0 6px 20px -6px rgba(163, 230, 53, 0.55);
   }
 
+  /* Secondary button on the sheet: white, hairline border. Mostly opaque
+     so it still reads over the hero video without a one-off override. */
   .btn-ghost {
-    /* Backdrop + blur even at rest, not just on hover — everywhere else
-       this sits on an already-dark surface so it's barely visible, but it
-       means a `btn-ghost` placed over something busier (the Home hero's
-       animated background) still reads clearly without a one-off override. */
-    @apply btn border border-border bg-bg/60 text-text backdrop-blur-sm;
+    @apply btn border border-border bg-surface/85 text-text backdrop-blur-sm;
   }
 
   .btn-ghost:hover:not(:disabled) {
-    @apply border-text-3 bg-surface-2;
+    @apply border-accent-2 bg-surface;
   }
 
   .btn:disabled {

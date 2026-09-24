@@ -8,28 +8,47 @@ const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      /* Light theme (design.md §11). Values follow the brand sheet's light
+         palette. */
       colors: {
-        bg: '#0A0A0A',
-        surface: '#111111',
-        'surface-2': '#151515',
-        border: '#242424',
-        'border-soft': '#1C1C1C',
-        text: '#FFFFFF',
-        'text-2': '#9C9C9C',
-        'text-3': '#6E6E6E',
-        accent: '#7BE07B',
-        'accent-ink': '#06240A',
-        up: '#6EE787',
-        down: '#FF8080',
+        bg: '#F8FAF6',
+        surface: '#FFFFFF',
+        'surface-2': '#EDF3EC',
+        border: '#E5EDE7',
+        'border-soft': '#EDF3EC',
+        text: '#1F2937',
+        'text-2': '#4B5563',
+        // Sheet's "Text Muted" is #9AA3B8, which is ~2.4:1 on the page
+        // background — too faint for the 11–12px captions this token
+        // carries. Darkened to clear 4.5:1 while staying the same cool grey.
+        'text-3': '#6B7280',
+        accent: '#D4F450',
+        'accent-2': '#A3E635',
+        'accent-ink': '#1F2937',
+        up: '#22C55E',
+        down: '#EF4444',
         // Character accent, its scope is locked in design.md §2.
-        'companion-pink': '#FFB6C1',
-        // Warm supporting accent for the marketing layout only, used
-        // sparingly for variety without turning companion-pink into a
-        // second general-purpose brand color (design.md §10).
-        ember: '#F2A65A',
+        'companion-pink': '#F9A8BE',
+        // Warm supporting accent for the marketing layout only (design.md
+        // §10) — the sheet's "Warning" amber.
+        ember: '#F59E0B',
+        info: '#3B82F6',
+      },
+      /* Foreground overrides. The palette's fills are bright by design —
+         lime, success green, pink — and read as solid shapes, but as *text*
+         on a near-white page they fall to 1.3–2.5:1. Tailwind resolves
+         `text-*` from `textColor` first, so these give every `text-accent`,
+         `text-up`, etc. a darker shade of the same hue while `bg-*` and
+         `border-*` keep the sheet's exact values. */
+      textColor: {
+        accent: '#4D7C0F',
+        up: '#15803D',
+        down: '#DC2626',
+        'companion-pink': '#DB2777',
+        ember: '#B45309',
       },
       fontFamily: {
-        display: ['var(--font-display)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['var(--font-body)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         sans: ['var(--font-body)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
@@ -47,9 +66,11 @@ const config: Config = {
         stage: '736px',
       },
       boxShadow: {
-        'glow-accent': '0 0 24px rgba(123, 224, 123, 0.15)',
-        'glow-soft': '0 0 18px rgba(123, 224, 123, 0.08)',
-        'glow-pink': '0 0 26px rgba(255, 182, 193, 0.12)',
+        // On a light page a glow reads as a smudge; these are soft lifted
+        // shadows with a hint of the brand hue instead.
+        'glow-accent': '0 6px 20px -6px rgba(163, 230, 53, 0.45)',
+        'glow-soft': '0 4px 16px -8px rgba(31, 41, 55, 0.14)',
+        'glow-pink': '0 6px 20px -6px rgba(249, 168, 190, 0.5)',
       },
       // Marquee keyframes are deliberately not here: `<Marquee>` sets
       // `animation-name` via inline style since speed is a runtime prop, and
