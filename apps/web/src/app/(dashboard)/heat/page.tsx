@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import type { HeatListPage } from '@robinchan/shared';
 
 import { HeatBoardFull } from '@/components/heat/HeatBoardFull';
 import { PageHeader } from '@/components/ui';
-import { getEnvelope, ssr } from '@/lib/api';
+import { getEnvelope } from '@/lib/api';
 import { pageFlags } from '@/lib/flags';
 
 export const metadata: Metadata = {
@@ -12,7 +13,15 @@ export const metadata: Metadata = {
   description: 'Which tokenized stocks and Robinhood Chain tokens have the most going on, and why.',
 };
 
-export const revalidate = 60;
+/**
+ * `force-dynamic`, not ISR: the initial board is wallet-gated (locked rows
+ * vs full detail), which means this page's rendered HTML depends on who's
+ * asking — a static/ISR-cached copy would either leak one wallet's unlocked
+ * view to the next visitor or never unlock at all. `getEnvelope` below
+ * forwards the incoming request's own cookies so the very first paint
+ * already reflects a signed-in caller, not just later client-side refreshes.
+ */
+export const dynamic = 'force-dynamic';
 
 /**
  * Heat (plan §4, H1): the full ranking behind Home's five-row heat board.
@@ -22,10 +31,11 @@ export default async function HeatPage() {
   const flags = pageFlags();
   if (!flags.heat) notFound();
 
+  const cookieStore = await cookies();
   const initial = await getEnvelope<HeatListPage | null>(
     '/api/heat/full?filter=all&sort=score&page=1',
     null,
-    ssr(60),
+    { headers: { cookie: cookieStore.toString() } },
   );
 
   return (

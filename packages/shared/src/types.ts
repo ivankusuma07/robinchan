@@ -140,6 +140,11 @@ export type TierState = {
   unlocked: string[];
 };
 
+/** `GET`/`PUT /api/user/watchlist` (brief §5) — wallet-gated, server-side. */
+export type WatchlistState = {
+  symbols: string[];
+};
+
 /* ---------- order (shape locked now, flow ships in M4) ---------- */
 
 export type OrderSide = 'buy' | 'sell';

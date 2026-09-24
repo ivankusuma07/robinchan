@@ -8,6 +8,7 @@
  */
 import { z } from 'zod';
 
+import { HEAT_SYMBOLS } from './constants.js';
 import { CANDLE_INTERVALS, CHAT_PAGES, HEAT_FILTERS, HEAT_SORTS, ORDER_STATUSES } from './types.js';
 
 export const symbolParam = z.object({
@@ -109,3 +110,28 @@ export type ChatBody = z.infer<typeof chatBody>;
 export const chatHistoryQuery = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });
+
+/* ---------- watchlist (brief §5's per-user watchlist) ---------- */
+
+/**
+ * `PUT` replaces the whole set — the client sends what it wants the list to
+ * be, not a delta. Restricted to `HEAT_SYMBOLS`, the only symbols the Heat
+ * page (the watchlist's one consumer so far) can ever show a row for —
+ * accepting anything else would let someone save an entry that can never
+ * surface data, which fails quietly rather than with a clear error.
+ */
+export const watchlistBody = z.object({
+  symbols: z
+    .array(
+      z
+        .string()
+        .min(1)
+        .max(12)
+        .transform((s) => s.toUpperCase())
+        .refine((s) => (HEAT_SYMBOLS as readonly string[]).includes(s), {
+          message: 'not a watched symbol',
+        }),
+    )
+    .max(50),
+});
+export type WatchlistBody = z.infer<typeof watchlistBody>;

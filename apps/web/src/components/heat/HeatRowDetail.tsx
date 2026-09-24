@@ -6,8 +6,8 @@ import type { ApiEnvelope, HeatComponentKey, HeatDetail } from '@robinchan/share
 import { TRADABLE_SYMBOLS, relativeTime } from '@robinchan/shared';
 
 import { DataBlock } from '@/components/DataBlock';
-import { ArrowRightIcon, ExternalIcon } from '@/components/icons';
-import { Skeleton } from '@/components/ui';
+import { ArrowRightIcon, ExternalIcon, StarIcon } from '@/components/icons';
+import { Skeleton, cx } from '@/components/ui';
 import { getEnvelope, isUnset } from '@/lib/api';
 import { safeUrl, sanitizeText } from '@/lib/sanitize';
 import { useNow } from '@/lib/usePoll';
@@ -27,7 +27,17 @@ const LABELS: Record<HeatComponentKey, string> = {
  * Opening a row is a plain read of `GET /api/heat/:symbol` — the read is
  * precomputed by the worker, so this never triggers an LLM call.
  */
-export function HeatRowDetail({ symbol, tradeEnabled }: { symbol: string; tradeEnabled: boolean }) {
+export function HeatRowDetail({
+  symbol,
+  tradeEnabled,
+  watchlisted,
+  onToggleWatchlist,
+}: {
+  symbol: string;
+  tradeEnabled: boolean;
+  watchlisted: boolean;
+  onToggleWatchlist: () => void;
+}) {
   const [envelope, setEnvelope] = useState<ApiEnvelope<HeatDetail | null> | null>(null);
   const now = useNow();
 
@@ -125,6 +135,15 @@ export function HeatRowDetail({ symbol, tradeEnabled }: { symbol: string; tradeE
               ) : null}
 
               <div className="flex flex-wrap gap-2.5">
+                <button
+                  type="button"
+                  onClick={onToggleWatchlist}
+                  aria-pressed={watchlisted}
+                  className="btn-ghost min-h-[40px] text-[13px]"
+                >
+                  <StarIcon className={cx(watchlisted && 'fill-accent text-accent')} />
+                  {watchlisted ? 'On your watchlist' : 'Add to watchlist'}
+                </button>
                 <Link href="/robinchan" className="btn-ghost min-h-[40px] text-[13px]">
                   Ask Robinchan
                 </Link>

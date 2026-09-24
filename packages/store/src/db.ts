@@ -74,6 +74,10 @@ export interface Db {
   insertChatMessage(msg: Omit<ChatMessage, 'id' | 'createdAt'>): Promise<ChatMessage>;
   /** Oldest first — the order a transcript reads in. */
   listChatMessages(userId: string, limit: number): Promise<ChatMessage[]>;
+  /** Oldest-added first. */
+  listWatchlist(userId: string): Promise<string[]>;
+  /** Replaces the whole set — matches `PUT /api/user/watchlist`'s semantics. */
+  setWatchlist(userId: string, symbols: string[]): Promise<void>;
   /** chat_messages 30 days, news_items 90 days (brief §10). */
   pruneRetention(): Promise<void>;
   ping(): Promise<boolean>;
@@ -289,6 +293,34 @@ class PgDb implements Db {
     return res.rows.map(rowToChatMessage).reverse();
   }
 
+  async listWatchlist(userId: string): Promise<string[]> {
+    const res = await this.pool.query(
+      'select symbol from watchlists where user_id = $1 order by added_at asc',
+      [userId],
+    );
+    return res.rows.map((r: Record<string, unknown>) => String(r.symbol));
+  }
+
+  async setWatchlist(userId: string, symbols: string[]): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('begin');
+      await client.query('delete from watchlists where user_id = $1', [userId]);
+      for (const symbol of symbols) {
+        await client.query(
+          'insert into watchlists (user_id, symbol) values ($1, $2) on conflict do nothing',
+          [userId, symbol],
+        );
+      }
+      await client.query('commit');
+    } catch (err) {
+      await client.query('rollback');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
   async pruneRetention(): Promise<void> {
     await this.pool.query(
       "delete from chat_messages where created_at < now() - interval '30 days'",
@@ -366,6 +398,8 @@ type FileShape = {
   calendar: CalendarEvent[];
   users: User[];
   chatMessages: ChatMessage[];
+  /** userId -> symbols, oldest-added first. */
+  watchlists: Record<string, string[]>;
 };
 
 class FileDb implements Db {
@@ -379,11 +413,11 @@ class FileDb implements Db {
   private read(): FileShape {
     try {
       const data = JSON.parse(readFileSync(this.file, 'utf8')) as Partial<FileShape>;
-      // `users`/`chatMessages` are newer than this file format; old
-      // `.data/db.json` files won't have them yet.
-      return { news: [], heat: [], calendar: [], users: [], chatMessages: [], ...data };
+      // `users`/`chatMessages`/`watchlists` are newer than this file format;
+      // old `.data/db.json` files won't have them yet.
+      return { news: [], heat: [], calendar: [], users: [], chatMessages: [], watchlists: {}, ...data };
     } catch {
-      return { news: [], heat: [], calendar: [], users: [], chatMessages: [] };
+      return { news: [], heat: [], calendar: [], users: [], chatMessages: [], watchlists: {} };
     }
   }
 
@@ -508,6 +542,16 @@ class FileDb implements Db {
     return this.read()
       .chatMessages.filter((m) => m.userId === userId)
       .slice(-limit);
+  }
+
+  async listWatchlist(userId: string): Promise<string[]> {
+    return this.read().watchlists[userId] ?? [];
+  }
+
+  async setWatchlist(userId: string, symbols: string[]): Promise<void> {
+    const data = this.read();
+    data.watchlists[userId] = [...new Set(symbols)];
+    this.write(data);
   }
 
   async pruneRetention(): Promise<void> {

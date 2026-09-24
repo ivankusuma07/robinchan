@@ -19,6 +19,7 @@ import { heatFullQuery, symbolParam, type HeatFullQuery } from '@robinchan/share
 import { cacheKey, getCache, getDb, type HeatRow } from '@robinchan/store';
 import { z } from 'zod';
 
+import { SESSION_COOKIE, readSession } from '../auth/session.js';
 import { atLeast, flag, resolveLevel } from '../lib/access.js';
 import { ApiFailure, envelope, readCached } from '../lib/envelope.js';
 import { livePrice, weekSpark } from '../lib/prices.js';
@@ -84,10 +85,18 @@ type PageSkeleton = {
   computedAt: string | null;
 };
 
-async function buildSkeleton(q: HeatFullQuery, level: HeatLevel): Promise<PageSkeleton> {
+async function buildSkeleton(
+  q: HeatFullQuery,
+  level: HeatLevel,
+  watchlist: Set<string> | null,
+): Promise<PageSkeleton> {
   const { rows } = await rankedRows();
   const filtered = rows
-    .filter((r) => (q.filter === 'all' || q.filter === 'watchlist' ? true : symbolKind(r.symbol) === q.filter))
+    .filter((r) => {
+      if (q.filter === 'all') return true;
+      if (q.filter === 'watchlist') return watchlist?.has(r.symbol) ?? false;
+      return symbolKind(r.symbol) === q.filter;
+    })
     .sort((a, b) => b.score - a.score);
 
   const visible = visibleCount(level);
@@ -184,15 +193,27 @@ export async function heatRoutes(app: FastifyInstance): Promise<void> {
     const q = parsed.data;
     const level = await resolveLevel(request);
 
-    // A watchlist belongs to a wallet (M3); there is nothing to filter by yet.
+    // A watchlist belongs to a wallet — needs a session either way.
     if (q.filter === 'watchlist' && !atLeast(level, 'wallet')) {
       throw new ApiFailure('WALLET_REQUIRED', 'connect a wallet to filter by watchlist', 401);
     }
 
+    // The watchlist filter is per-user, so it can never share the page
+    // cache below — that cache key has no user in it, and reusing it here
+    // would serve one wallet's watchlist rows to another. `rankedRows()`
+    // underneath is still the worker's shared cache, so this stays cheap.
+    let watchlist: Set<string> | null = null;
+    if (q.filter === 'watchlist') {
+      const session = await readSession(request.cookies[SESSION_COOKIE]);
+      watchlist = new Set(session ? await getDb().listWatchlist(session.userId) : []);
+    }
+
     const key = `full:${q.filter}:${q.sort}:${q.page}:${level}`;
-    const cached = await readCached<PageSkeleton>('heat', key);
-    const skeleton = cached?.data ?? (await buildSkeleton(q, level));
-    if (!cached) await getCache().set(cacheKey('heat', key), skeleton, PAGE_TTL_SEC);
+    const cached = q.filter === 'watchlist' ? null : await readCached<PageSkeleton>('heat', key);
+    const skeleton = cached?.data ?? (await buildSkeleton(q, level, watchlist));
+    if (!cached && q.filter !== 'watchlist') {
+      await getCache().set(cacheKey('heat', key), skeleton, PAGE_TTL_SEC);
+    }
 
     const source = await readCached<HeatRow[]>('heat', 'top');
     const rows: HeatListPage['rows'] = await Promise.all(

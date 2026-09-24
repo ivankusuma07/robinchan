@@ -19,6 +19,7 @@ import { Skeleton, StaleBadge, cx } from '@/components/ui';
 import { getEnvelope, isUnset } from '@/lib/api';
 import { useNow } from '@/lib/usePoll';
 import { useTier } from '@/lib/useTier';
+import { useWatchlist } from '@/lib/useWatchlist';
 
 import { HeatBar, MiniBar } from './HeatBar';
 import { HeatRowDetail } from './HeatRowDetail';
@@ -61,6 +62,7 @@ export function HeatBoardFull({
   tradeEnabled: boolean;
 }) {
   const { connected } = useTier();
+  const watchlist = useWatchlist();
   const [filter, setFilter] = useState<HeatFilter>('all');
   const [sort, setSort] = useState<HeatSort>('score');
   const [page, setPage] = useState(1);
@@ -234,6 +236,8 @@ export function HeatBoardFull({
                 open={open === row.symbol}
                 onToggle={() => setOpen((cur) => (cur === row.symbol ? null : row.symbol))}
                 tradeEnabled={tradeEnabled}
+                watchlisted={watchlist.has(row.symbol)}
+                onToggleWatchlist={() => watchlist.toggle(row.symbol)}
               />
             ))}
           </ul>
@@ -282,11 +286,15 @@ function HeatRowItem({
   open,
   onToggle,
   tradeEnabled,
+  watchlisted,
+  onToggleWatchlist,
 }: {
   row: HeatListRow;
   open: boolean;
   onToggle: () => void;
   tradeEnabled: boolean;
+  watchlisted: boolean;
+  onToggleWatchlist: () => void;
 }) {
   const dir = direction(row.changePct);
   const body = (
@@ -365,7 +373,14 @@ function HeatRowItem({
       >
         {body}
       </button>
-      {open ? <HeatRowDetail symbol={row.symbol} tradeEnabled={tradeEnabled} /> : null}
+      {open ? (
+        <HeatRowDetail
+          symbol={row.symbol}
+          tradeEnabled={tradeEnabled}
+          watchlisted={watchlisted}
+          onToggleWatchlist={onToggleWatchlist}
+        />
+      ) : null}
     </li>
   );
 }

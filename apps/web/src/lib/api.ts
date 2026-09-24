@@ -14,6 +14,15 @@ export async function getEnvelope<T>(
 ): Promise<ApiEnvelope<T>> {
   try {
     const res = await fetch(`${API_BASE}${path}`, {
+      // Without this, a client-side re-fetch (a poll tick, a filter/sort
+      // change) never sends the session cookie cross-origin, so a
+      // wallet-gated route falls back to its public view even for a
+      // signed-in caller — every other caller that reads a cookie already
+      // sets this explicitly (WalletProvider, useChat, useWatchlist); this
+      // is the one that was missed. Harmless on the server (Node's `fetch`
+      // has no browser cookie jar to draw from either way) and on public
+      // endpoints, which simply have no cookie to read.
+      credentials: 'include',
       ...init,
       headers: { accept: 'application/json', ...(init.headers ?? {}) },
       signal: init.signal ?? AbortSignal.timeout(6000),

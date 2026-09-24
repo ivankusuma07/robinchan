@@ -17,6 +17,7 @@ import {
   MessageSquareText,
   PanelLeftClose,
   PanelLeftOpen,
+  Star,
   X,
   type LucideProps,
 } from 'lucide-react';
@@ -58,3 +59,5 @@ export const BackgroundIcon = wrap(ImageGlyph, 16);
 export const CheckIcon = wrap(Check, 14);
 export const CollapseSidebarIcon = wrap(PanelLeftClose, 18);
 export const ExpandSidebarIcon = wrap(PanelLeftOpen, 18);
+/** Heat row watchlist toggle. */
+export const StarIcon = wrap(Star, 16);
