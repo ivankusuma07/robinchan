@@ -20,7 +20,8 @@ import { getEnvelope, ssr } from '@/lib/api';
  * gets its own top nav, a full-bleed hero backdrop, and scroll-triggered
  * entrances the dashboard pages deliberately skip.
  */
-export const revalidate = 15;
+/** `force-dynamic`, not ISR — see the same note in `(dashboard)/market/page.tsx`. */
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   const [snapshot, heat] = await Promise.all([

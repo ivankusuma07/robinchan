@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   description: 'A Live2D companion that reads the market and helps build orders.',
 };
 
-export const revalidate = 15;
+/** `force-dynamic`, not ISR — see the same note in `(dashboard)/market/page.tsx`. */
+export const dynamic = 'force-dynamic';
 
 /**
  * Character page (brief §5), laid out as a stage: the Live2D frame fills

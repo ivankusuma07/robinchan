@@ -21,7 +21,18 @@ export const metadata: Metadata = {
   description: 'Index, news, filings, and live broadcasts for tokenized stocks.',
 };
 
-export const revalidate = 15;
+/**
+ * `force-dynamic` rather than ISR: this page embeds live, fast-moving
+ * numbers (prices, indices) directly into the initial HTML/RSC payload.
+ * Under ISR, Vercel's edge can serve a stale static copy while a background
+ * regeneration is in flight — reproducibly (confirmed by hammering the live
+ * deployment with headless Chrome) causing a React hydration text mismatch
+ * (error #418) when the served shell and what the client recomputes on
+ * mount land a beat apart. The underlying `fetch()` calls still cache via
+ * `ssr(...)`'s `next.revalidate`, so this doesn't add load on the API — it
+ * only removes the page-level CDN caching that raced.
+ */
+export const dynamic = 'force-dynamic';
 
 /**
  * Market (brief §6): the most data-dense page. Every news slot in the
