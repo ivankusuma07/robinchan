@@ -236,3 +236,28 @@ The two surfaces now solve it differently, because they can:
 **This replaced GhostFibers** as the hero backdrop. Running a WebGL fiber field and a video decode behind the same 620px band means two effects competing rather than layering. `components/effects/GhostFibers.tsx` and the `ogl` dependency are now unreferenced; nothing imports them, so they carry no bundle cost, but they are dead code.
 
 **Panels stay opaque over video.** On `/robinchan` the `.card` surfaces are unchanged, so the backdrop only shows in the gutters and behind `PageHeader` — whose lead copy sits directly on it, which is what sets the brightness ceiling there.
+
+## 11. Light theme (supersedes the §2 palette)
+
+The site moved from the near-black / mint scheme to the brand sheet's light palette. Tokens keep their names, so every component re-themed through `tailwind.config.ts` without per-file color edits; only hard-coded dark-specific values (video scrims, glass fills, sparkline strokes, mood glows) were changed by hand.
+
+| Token | Value | Sheet name |
+| --- | --- | --- |
+| `bg` | `#F8FAF6` | Background |
+| `surface` | `#FFFFFF` | Card |
+| `surface-2` / `border-soft` | `#EDF3EC` | Surface Alt |
+| `border` | `#E5EDE7` | Surface |
+| `text` / `text-2` | `#1F2937` / `#4B5563` | Text Primary / Secondary |
+| `text-3` | `#6B7280` | Text Muted, darkened (see below) |
+| `accent` / `accent-2` | `#D4F450` / `#A3E635` | Primary / Secondary Green |
+| `accent-ink` | `#1F2937` | Text on the lime |
+| `up` / `down` | `#22C55E` / `#EF4444` | Success / Error |
+| `ember` / `info` | `#F59E0B` / `#3B82F6` | Warning / Info |
+
+Font: **Inter** for headings and body (both `font-display` and `font-sans` resolve to it). **JetBrains Mono stays** for prices, tickers, and eyebrows — brief §3 wants tabular figures there and the mono idiom is what marks data as data.
+
+**Fill colour ≠ text colour.** The sheet's lime, success green, and pink are fills; as text on a near-white page they sit at 1.3–2.5:1. `theme.extend.textColor` overrides `text-accent`, `text-up`, `text-down`, `text-companion-pink`, and `text-ember` with deeper shades of the same hue, while `bg-*`/`border-*` keep the sheet values. Display-size accent words use `.text-accent-gradient` (the sheet's Accent Gradient, deepened to hold 3:1) — never body copy. `text-3` is darkened from the sheet's `#9AA3B8` (~2.4:1) for the same reason.
+
+**Glass is frosted white**, not smoked: `.card-glass` is ~72% white with a soft cool drop shadow. Depth on a light page comes from shadow, not from a lit edge. Low-alpha accent tints (`bg-accent/[0.05]` etc.) were raised to 20–35%, since lime at 5–7% vanishes on white.
+
+**The hero video is washed light**, not dark: same left/down scrim weighting as §10.3, in `#F8FAF6` instead of `#0A0A0A`, and `.text-on-media` is now a light halo behind dark text. The Home blob field was recolored to the lime → green family at 55% overall. The `/robinchan` stage video stays untreated (per request); its panels are glass and read over it.
