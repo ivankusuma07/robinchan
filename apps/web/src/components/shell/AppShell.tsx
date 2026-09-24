@@ -4,20 +4,45 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 
 import { MenuIcon } from '@/components/icons';
-import { Pill, PulseDot, cx } from '@/components/ui';
+import { cx } from '@/components/ui';
 import { navItems, type NavFlags } from '@/lib/nav';
 
 import { SidebarContent } from './Sidebar';
 import { WalletButton } from './WalletButton';
 
+const COLLAPSE_KEY = 'robinchan.sidebar-collapsed';
+
 /**
  * Shell shared by all three pages: 248px sidebar, 76px topbar (brief §3).
  * Below 1024px the sidebar becomes a drawer triggered by the hamburger in
- * the topbar.
+ * the topbar. On desktop it can also collapse to an 80px icon rail — a
+ * per-viewer preference, so it's read from `localStorage` (after mount, to
+ * keep SSR and first paint in sync) rather than reset on every visit.
  */
 export function AppShell({ children, flags }: { children: ReactNode; flags: NavFlags }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    try {
+      setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === 'true');
+    } catch {
+      /* Storage unavailable — stay expanded. */
+    }
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(COLLAPSE_KEY, String(next));
+      } catch {
+        /* Not persisted; the choice still applies for this visit. */
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -45,10 +70,20 @@ export function AppShell({ children, flags }: { children: ReactNode; flags: NavF
   );
 
   return (
-    <div className="min-h-screen lg:pl-sidebar">
+    <div
+      className={cx(
+        'min-h-screen transition-[padding-left] duration-[250ms] ease-soft',
+        collapsed ? 'lg:pl-sidebar-collapsed' : 'lg:pl-sidebar',
+      )}
+    >
       {/* Sidebar stays fixed on desktop */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-sidebar border-r border-border-soft bg-surface lg:block">
-        <SidebarContent items={items} />
+      <aside
+        className={cx(
+          'fixed inset-y-0 left-0 z-40 hidden border-r border-border-soft bg-surface transition-[width] duration-[250ms] ease-soft lg:block',
+          collapsed ? 'w-sidebar-collapsed' : 'w-sidebar',
+        )}
+      >
+        <SidebarContent items={items} collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
       </aside>
 
       {/* Drawer below 1024px */}
@@ -101,11 +136,6 @@ export function AppShell({ children, flags }: { children: ReactNode; flags: NavF
             {current?.label ?? 'Robinchan'}
           </p>
         </div>
-
-        <Pill tone="accent" className="hidden sm:inline-flex">
-          <PulseDot />
-          testnet
-        </Pill>
 
         <WalletButton />
       </header>

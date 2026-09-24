@@ -4,17 +4,23 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { CloseIcon } from '@/components/icons';
+import { CloseIcon, CollapseSidebarIcon, ExpandSidebarIcon } from '@/components/icons';
 import { SoonBadge, cx } from '@/components/ui';
 import type { NavItem } from '@/lib/nav';
 
 export function SidebarContent({
   items,
+  collapsed = false,
+  onToggleCollapse,
   onNavigate,
   /** Only set when the sidebar is used as a drawer below 1024px. */
   onClose,
 }: {
   items: NavItem[];
+  /** Icon-only rail (desktop only) — the mobile drawer never collapses, so it omits this. */
+  collapsed?: boolean;
+  /** Present only for the desktop `<aside>` instance; its absence is what keeps the toggle out of the mobile drawer. */
+  onToggleCollapse?: () => void;
   onNavigate?: () => void;
   onClose?: () => void;
 }) {
@@ -22,7 +28,12 @@ export function SidebarContent({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-topbar shrink-0 items-center gap-2.5 border-b border-border-soft px-6">
+      <div
+        className={cx(
+          'flex h-topbar shrink-0 items-center border-b border-border-soft',
+          collapsed ? 'justify-center px-2' : 'gap-2.5 px-6',
+        )}
+      >
         <Image
           src="/img/logo.jpg"
           alt=""
@@ -31,11 +42,13 @@ export function SidebarContent({
           height={32}
           priority
           quality={95}
-          className="h-8 w-8 rounded-[8px]"
+          className="h-8 w-8 shrink-0 rounded-[8px]"
         />
-        <span className="flex-1 font-display text-[15px] font-semibold tracking-[0.01em]">
-          Robinchan
-        </span>
+        {!collapsed ? (
+          <span className="flex-1 truncate font-display text-[15px] font-semibold tracking-[0.01em]">
+            Robinchan
+          </span>
+        ) : null}
         {onClose ? (
           <button
             type="button"
@@ -48,8 +61,11 @@ export function SidebarContent({
         ) : null}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-4 py-5" aria-label="Main navigation">
-        <p className="t-eyebrow px-2 pb-3">Navigation</p>
+      <nav
+        className={cx('flex-1 overflow-y-auto py-5', collapsed ? 'px-2' : 'px-4')}
+        aria-label="Main navigation"
+      >
+        {!collapsed ? <p className="t-eyebrow px-2 pb-3">Navigation</p> : null}
         <ul className="space-y-1">
           {items.map((item) => {
             const active =
@@ -61,12 +77,19 @@ export function SidebarContent({
                 <li key={item.href}>
                   <span
                     aria-disabled="true"
-                    className="flex min-h-[44px] items-center gap-3 rounded-full px-3 text-text-3"
-                    title="This page isn't switched on yet"
+                    title={collapsed ? `${item.label} — not switched on yet` : "This page isn't switched on yet"}
+                    className={cx(
+                      'flex min-h-[44px] items-center rounded-full text-text-3',
+                      collapsed ? 'justify-center px-0' : 'gap-3 px-3',
+                    )}
                   >
                     <Icon className="shrink-0 opacity-60" />
-                    <span className="flex-1 text-sm">{item.label}</span>
-                    <SoonBadge />
+                    {!collapsed ? (
+                      <>
+                        <span className="flex-1 text-sm">{item.label}</span>
+                        <SoonBadge />
+                      </>
+                    ) : null}
                   </span>
                 </li>
               );
@@ -78,18 +101,24 @@ export function SidebarContent({
                   href={item.href}
                   onClick={onNavigate}
                   aria-current={active ? 'page' : undefined}
+                  title={collapsed ? item.label : undefined}
                   className={cx(
-                    'flex min-h-[44px] items-center gap-3 rounded-full px-3 text-sm transition-colors',
+                    'flex min-h-[44px] items-center rounded-full text-sm transition-colors',
+                    collapsed ? 'justify-center px-0' : 'gap-3 px-3',
                     active
                       ? 'border border-accent-2/70 bg-accent/35 text-text shadow-glow-accent'
                       : 'border border-transparent text-text-2 hover:border-border hover:bg-surface hover:text-text',
                   )}
                 >
                   <Icon className={cx('shrink-0', active && 'text-accent')} />
-                  <span className="flex-1">{item.label}</span>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-text-3">
-                    {item.hint}
-                  </span>
+                  {!collapsed ? (
+                    <>
+                      <span className="flex-1">{item.label}</span>
+                      <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-text-3">
+                        {item.hint}
+                      </span>
+                    </>
+                  ) : null}
                 </Link>
               </li>
             );
@@ -97,13 +126,31 @@ export function SidebarContent({
         </ul>
       </nav>
 
-      <div className="border-t border-border-soft px-6 py-5">
-        <p className="t-eyebrow mb-2">Status</p>
-        <p className="text-[13px] leading-relaxed text-text-3">
-          Non-custodial. Your keys stay in your own wallet — the server can never sign on your
-          behalf.
-        </p>
-      </div>
+      {onToggleCollapse ? (
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className={cx(
+            'flex min-h-[44px] shrink-0 items-center border-t border-border-soft text-text-3 transition-colors hover:text-text',
+            collapsed ? 'justify-center px-2' : 'gap-2.5 px-6',
+          )}
+        >
+          {collapsed ? <ExpandSidebarIcon /> : <CollapseSidebarIcon />}
+          {!collapsed ? <span className="text-[13px]">Collapse</span> : null}
+        </button>
+      ) : null}
+
+      {!collapsed ? (
+        <div className="border-t border-border-soft px-6 py-5">
+          <p className="t-eyebrow mb-2">Status</p>
+          <p className="text-[13px] leading-relaxed text-text-3">
+            Non-custodial. Your keys stay in your own wallet — the server can never sign on your
+            behalf.
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }

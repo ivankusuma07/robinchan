@@ -15,6 +15,8 @@ import {
   Lock,
   Menu,
   MessageSquareText,
+  PanelLeftClose,
+  PanelLeftOpen,
   X,
   type LucideProps,
 } from 'lucide-react';
@@ -54,3 +56,5 @@ export const ChatIcon = wrap(MessageSquareText, 20);
 export const KeyIcon = wrap(KeyRound, 20);
 export const BackgroundIcon = wrap(ImageGlyph, 16);
 export const CheckIcon = wrap(Check, 14);
+export const CollapseSidebarIcon = wrap(PanelLeftClose, 18);
+export const ExpandSidebarIcon = wrap(PanelLeftOpen, 18);
