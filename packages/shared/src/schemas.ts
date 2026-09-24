@@ -8,7 +8,7 @@
  */
 import { z } from 'zod';
 
-import { HEAT_SYMBOLS } from './constants.js';
+import { HEAT_SYMBOLS, TRADABLE_SYMBOLS } from './constants.js';
 import { CANDLE_INTERVALS, CHAT_PAGES, HEAT_FILTERS, HEAT_SORTS, ORDER_STATUSES } from './types.js';
 
 export const symbolParam = z.object({
@@ -70,6 +70,35 @@ export type OrderToolOutput = z.infer<typeof orderToolOutput>;
 export const orderParseBody = z.object({
   text: z.string().trim().min(1).max(300),
 });
+
+/** `POST /api/order/quote` (brief line 354): the same intent shape `OrderIntent` already locks in. */
+export const orderQuoteBody = z
+  .object({
+    side: z.enum(['buy', 'sell']),
+    symbol: z
+      .string()
+      .min(1)
+      .max(12)
+      .transform((s) => s.toUpperCase())
+      .refine((s) => (TRADABLE_SYMBOLS as readonly string[]).includes(s), {
+        message: 'not a tradable symbol',
+      }),
+    qty: z.number().positive().finite(),
+    orderType: z.enum(['market', 'limit']),
+    limitPrice: z.number().positive().finite().nullable(),
+  })
+  .refine((q) => q.orderType !== 'limit' || q.limitPrice != null, {
+    message: 'a limit order needs a limit price',
+    path: ['limitPrice'],
+  });
+export type OrderQuoteBody = z.infer<typeof orderQuoteBody>;
+
+/** `POST /api/order/record` (brief line 356): the tx hash the wallet returned after signing. */
+export const orderRecordBody = z.object({
+  orderId: z.string().uuid(),
+  txHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/, 'not a valid transaction hash'),
+});
+export type OrderRecordBody = z.infer<typeof orderRecordBody>;
 
 export const costBasisBody = z.object({
   symbol: z.string().min(1).max(12).regex(/^[A-Za-z0-9.\-]+$/),

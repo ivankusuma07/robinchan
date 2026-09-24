@@ -19,6 +19,7 @@ export type ApiErrorCode =
   | 'UPSTREAM_DOWN'
   | 'WALLET_REQUIRED'
   | 'TIER_REQUIRED'
+  | 'PIPELINE_NOT_CONFIGURED'
   | 'INTERNAL';
 
 export type ApiError = {

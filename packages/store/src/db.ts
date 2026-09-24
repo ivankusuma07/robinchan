@@ -9,6 +9,8 @@ import type {
   HeatComponentKey,
   HeatComponents,
   NewsItem,
+  OrderSide,
+  OrderStatus,
 } from '@robinchan/shared';
 
 import { dataDir } from './paths.js';
@@ -56,6 +58,29 @@ export type ChatMessage = {
   createdAt: string;
 };
 
+/**
+ * A trade order row (brief line 287 + the G1/G2 fill/status columns). The
+ * quote itself — price, gas, fee, and its 30-second `expiresAt` — is never
+ * stored here: it's short-lived and only ever meaningful within that
+ * window, so it lives in the cache instead (`order.ts`'s quote route),
+ * keyed by this row's id.
+ */
+export type Order = {
+  id: string;
+  userId: string;
+  side: OrderSide;
+  symbol: string;
+  qty: number;
+  limitPrice: number | null;
+  status: OrderStatus;
+  txHash: string | null;
+  fillPrice: number | null;
+  filledQty: number | null;
+  feeUsd: number | null;
+  filledAt: string | null;
+  createdAt: string;
+};
+
 export interface Db {
   migrate(): Promise<void>;
   /** Returns the count of rows that were genuinely new after dedupe. */
@@ -78,6 +103,18 @@ export interface Db {
   listWatchlist(userId: string): Promise<string[]>;
   /** Replaces the whole set — matches `PUT /api/user/watchlist`'s semantics. */
   setWatchlist(userId: string, symbols: string[]): Promise<void>;
+  /** Always starts `status: 'quoted'` — a row only ever exists once a quote has actually been built. */
+  insertOrder(order: {
+    userId: string;
+    side: OrderSide;
+    symbol: string;
+    qty: number;
+    limitPrice: number | null;
+  }): Promise<Order>;
+  getOrder(id: string): Promise<Order | null>;
+  /** `quoted` → `signed`, with the hash the wallet returned. */
+  recordOrderSignature(id: string, txHash: string): Promise<Order>;
+  setOrderStatus(id: string, status: OrderStatus): Promise<void>;
   /** chat_messages 30 days, news_items 90 days (brief §10). */
   pruneRetention(): Promise<void>;
   ping(): Promise<boolean>;
@@ -321,6 +358,39 @@ class PgDb implements Db {
     }
   }
 
+  async insertOrder(order: {
+    userId: string;
+    side: OrderSide;
+    symbol: string;
+    qty: number;
+    limitPrice: number | null;
+  }): Promise<Order> {
+    const res = await this.pool.query(
+      `insert into orders (user_id, side, symbol, qty, limit_price, status)
+       values ($1,$2,$3,$4,$5,'quoted')
+       returning *`,
+      [order.userId, order.side, order.symbol, order.qty, order.limitPrice],
+    );
+    return rowToOrder(res.rows[0]);
+  }
+
+  async getOrder(id: string): Promise<Order | null> {
+    const res = await this.pool.query('select * from orders where id = $1', [id]);
+    return res.rows[0] ? rowToOrder(res.rows[0]) : null;
+  }
+
+  async recordOrderSignature(id: string, txHash: string): Promise<Order> {
+    const res = await this.pool.query(
+      `update orders set status = 'signed', tx_hash = $2 where id = $1 returning *`,
+      [id, txHash],
+    );
+    return rowToOrder(res.rows[0]);
+  }
+
+  async setOrderStatus(id: string, status: OrderStatus): Promise<void> {
+    await this.pool.query('update orders set status = $2 where id = $1', [id, status]);
+  }
+
   async pruneRetention(): Promise<void> {
     await this.pool.query(
       "delete from chat_messages where created_at < now() - interval '30 days'",
@@ -348,6 +418,24 @@ function rowToUser(r: Record<string, unknown>): User {
     walletAddress: String(r.wallet_address),
     createdAt: new Date(r.created_at as string).toISOString(),
     lastSeenAt: new Date(r.last_seen_at as string).toISOString(),
+  };
+}
+
+function rowToOrder(r: Record<string, unknown>): Order {
+  return {
+    id: String(r.id),
+    userId: String(r.user_id),
+    side: r.side as OrderSide,
+    symbol: String(r.symbol),
+    qty: Number(r.qty),
+    limitPrice: r.limit_price != null ? Number(r.limit_price) : null,
+    status: r.status as OrderStatus,
+    txHash: (r.tx_hash as string | null) ?? null,
+    fillPrice: r.fill_price != null ? Number(r.fill_price) : null,
+    filledQty: r.filled_qty != null ? Number(r.filled_qty) : null,
+    feeUsd: r.fee_usd != null ? Number(r.fee_usd) : null,
+    filledAt: r.filled_at ? new Date(r.filled_at as string).toISOString() : null,
+    createdAt: new Date(r.created_at as string).toISOString(),
   };
 }
 
@@ -400,6 +488,7 @@ type FileShape = {
   chatMessages: ChatMessage[];
   /** userId -> symbols, oldest-added first. */
   watchlists: Record<string, string[]>;
+  orders: Order[];
 };
 
 class FileDb implements Db {
@@ -413,11 +502,28 @@ class FileDb implements Db {
   private read(): FileShape {
     try {
       const data = JSON.parse(readFileSync(this.file, 'utf8')) as Partial<FileShape>;
-      // `users`/`chatMessages`/`watchlists` are newer than this file format;
-      // old `.data/db.json` files won't have them yet.
-      return { news: [], heat: [], calendar: [], users: [], chatMessages: [], watchlists: {}, ...data };
+      // `users`/`chatMessages`/`watchlists`/`orders` are newer than this
+      // file format; old `.data/db.json` files won't have them yet.
+      return {
+        news: [],
+        heat: [],
+        calendar: [],
+        users: [],
+        chatMessages: [],
+        watchlists: {},
+        orders: [],
+        ...data,
+      };
     } catch {
-      return { news: [], heat: [], calendar: [], users: [], chatMessages: [], watchlists: {} };
+      return {
+        news: [],
+        heat: [],
+        calendar: [],
+        users: [],
+        chatMessages: [],
+        watchlists: {},
+        orders: [],
+      };
     }
   }
 
@@ -551,6 +657,56 @@ class FileDb implements Db {
   async setWatchlist(userId: string, symbols: string[]): Promise<void> {
     const data = this.read();
     data.watchlists[userId] = [...new Set(symbols)];
+    this.write(data);
+  }
+
+  async insertOrder(order: {
+    userId: string;
+    side: OrderSide;
+    symbol: string;
+    qty: number;
+    limitPrice: number | null;
+  }): Promise<Order> {
+    const data = this.read();
+    const created: Order = {
+      id: randomUUID(),
+      userId: order.userId,
+      side: order.side,
+      symbol: order.symbol,
+      qty: order.qty,
+      limitPrice: order.limitPrice,
+      status: 'quoted',
+      txHash: null,
+      fillPrice: null,
+      filledQty: null,
+      feeUsd: null,
+      filledAt: null,
+      createdAt: new Date().toISOString(),
+    };
+    data.orders.push(created);
+    this.write(data);
+    return created;
+  }
+
+  async getOrder(id: string): Promise<Order | null> {
+    return this.read().orders.find((o) => o.id === id) ?? null;
+  }
+
+  async recordOrderSignature(id: string, txHash: string): Promise<Order> {
+    const data = this.read();
+    const order = data.orders.find((o) => o.id === id);
+    if (!order) throw new Error(`no such order: ${id}`);
+    order.status = 'signed';
+    order.txHash = txHash;
+    this.write(data);
+    return order;
+  }
+
+  async setOrderStatus(id: string, status: OrderStatus): Promise<void> {
+    const data = this.read();
+    const order = data.orders.find((o) => o.id === id);
+    if (!order) return;
+    order.status = status;
     this.write(data);
   }
 

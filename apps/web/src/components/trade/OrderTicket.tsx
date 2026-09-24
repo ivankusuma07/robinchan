@@ -7,6 +7,7 @@ import { formatPrice } from '@robinchan/shared';
 import { TierGate } from '@/components/gates';
 import { OrderPreviewCard } from '@/components/OrderPreviewCard';
 import { cx } from '@/components/ui';
+import { API_BASE } from '@/lib/api';
 import { useTier } from '@/lib/useTier';
 
 /** A limit this far from the last price needs an explicit confirmation (plan §8). */
@@ -20,17 +21,19 @@ const FRACTIONS = [
 ] as const;
 
 /**
- * Order ticket (plan §8). Builds the same intent object `/api/order/parse`
- * returns for chat, so both paths share one quote → sign → record pipeline
- * (M4) — the ticket is a second way to fill in an intent, not a second way
- * to trade.
+ * Order ticket (plan §8). Builds the same intent shape `parseOrder` returns
+ * for chat, so both paths share one quote → sign → record pipeline — the
+ * ticket is a second way to fill in an intent, not a second way to trade.
  *
- * What's live today: side, type, amount, the inline validation that needs
- * no wallet, and an *indicative* value from the last price. Balance, gas,
- * the quote, and signing need a wallet (M3) and the order pipeline (M4), so
- * those controls are present but disabled and say why. Once a quote exists
- * it renders in the shared `<OrderPreviewCard>`, which owns the countdown
- * and expiry rules — there is deliberately no second copy of them here.
+ * "Review" calls the real `POST /api/order/quote`. It always answers
+ * `PIPELINE_NOT_CONFIGURED` right now: brief §18's open decisions #4 (which
+ * DEX + its ABI) and #5 (protocol fee) are still unanswered, so there's no
+ * real gas estimate or unsigned payload to build yet — that error surfaces
+ * here honestly rather than the button staying hardcoded-disabled. The
+ * fraction shortcuts still need a wallet's real balance (M3's portfolio
+ * read). Once a quote exists it renders in the shared
+ * `<OrderPreviewCard>`, which owns the countdown and expiry rules — there
+ * is deliberately no second copy of them here.
  */
 export function OrderTicket({
   symbol,
@@ -48,6 +51,8 @@ export function OrderTicket({
   const [ackDeviation, setAckDeviation] = useState(false);
   const [touched, setTouched] = useState(false);
   const [quote, setQuote] = useState<OrderQuote | null>(null);
+  const [quoting, setQuoting] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   const last = live.ticker?.price ?? null;
   const qty = Number(amount);
@@ -71,9 +76,41 @@ export function OrderTicket({
     problems.push('Confirm the limit price below; it is far from the last price.');
   }
 
-  const blockedReason = !connected
-    ? 'Connect a wallet to check your balance and gas, and to sign.'
-    : 'Quotes and signing go live with the order pipeline (M4).';
+  const formValid =
+    qtyValid && last != null && (type !== 'limit' || limitValid) && (!needsAck || ackDeviation);
+  const canReview = connected && formValid;
+
+  const requestQuote = async () => {
+    if (!canReview) return;
+    setQuoting(true);
+    setQuoteError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/order/quote`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          side,
+          symbol,
+          qty,
+          orderType: type,
+          limitPrice: type === 'limit' ? limitPrice : null,
+        }),
+      });
+      const body = (await res.json().catch(() => null)) as
+        | { data?: OrderQuote; error?: { message?: string } }
+        | null;
+      if (!res.ok || !body?.data) {
+        setQuoteError(body?.error?.message ?? "Couldn't get a quote right now.");
+        return;
+      }
+      setQuote(body.data);
+    } catch {
+      setQuoteError("Couldn't reach the server for a quote.");
+    } finally {
+      setQuoting(false);
+    }
+  };
 
   return (
     <section className="card flex flex-col" aria-label="Order ticket">
@@ -212,14 +249,27 @@ export function OrderTicket({
           <div>
             <button
               type="button"
-              disabled
-              title={blockedReason}
+              disabled={!canReview || quoting}
+              title={!connected ? 'Connect a wallet to check your balance and gas, and to sign.' : undefined}
               className="btn-primary w-full text-sm"
-              onClick={() => setTouched(true)}
+              onClick={() => {
+                setTouched(true);
+                void requestQuote();
+              }}
             >
-              {side === 'buy' ? `Review buy ${symbol}` : `Review sell ${symbol}`}
+              {quoting
+                ? 'Getting a quote…'
+                : side === 'buy'
+                  ? `Review buy ${symbol}`
+                  : `Review sell ${symbol}`}
             </button>
-            <p className="mt-2 text-center text-[12px] text-text-3">{blockedReason}</p>
+            {!connected ? (
+              <p className="mt-2 text-center text-[12px] text-text-3">
+                Connect a wallet to check your balance and gas, and to sign.
+              </p>
+            ) : quoteError ? (
+              <p className="mt-2 text-center text-[12px] text-down">{quoteError}</p>
+            ) : null}
           </div>
         )}
 
