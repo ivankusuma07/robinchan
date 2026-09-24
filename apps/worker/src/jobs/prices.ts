@@ -2,6 +2,7 @@ import type { MarketIndex, Ticker } from '@robinchan/shared';
 import { INDEX_NAMES, INDEX_SYMBOLS, SYMBOL_NAMES, WATCHED_SYMBOLS } from '@robinchan/shared';
 import { cacheKey, getCache } from '@robinchan/store';
 
+import { fetchQuotes as fetchQuotesAlphaVantage } from '../providers/alphavantage.js';
 import { fetchTokenStats } from '../providers/dexscreener.js';
 import { fetchQuotes, type RawQuote } from '../providers/finnhub.js';
 import { fixtureQuotes, fixtureSpark, fixturesEnabled } from '../providers/fixtures.js';
@@ -23,14 +24,46 @@ function toTicker(q: RawQuote, names: Record<string, string>): Ticker {
   };
 }
 
+/**
+ * Finnhub first; Alpha Vantage fills in only whatever Finnhub didn't return
+ * a price for — a symbol it silently skipped, or every symbol if the whole
+ * call failed. Falls to fixtures (dev only) or throws only once neither
+ * provider has anything, so a real price is never overwritten by a guess.
+ */
 async function quotesFor(symbols: readonly string[]): Promise<RawQuote[]> {
+  let quotes: RawQuote[] = [];
+  let primaryErr: unknown;
   try {
-    return await fetchQuotes(symbols);
+    quotes = await fetchQuotes(symbols);
   } catch (err) {
-    if (!fixturesEnabled()) throw err;
-    log.debug('prices', `provider unavailable, using fixture (${(err as Error).message})`);
+    primaryErr = err;
+  }
+
+  const missing = symbols.filter((s) => !quotes.some((q) => q.symbol === s));
+  if (missing.length > 0) {
+    try {
+      const backup = await fetchQuotesAlphaVantage(missing);
+      if (backup.length > 0) {
+        log.debug(
+          'prices',
+          `alpha vantage filled ${backup.length}/${missing.length} symbol(s) finnhub missed`,
+        );
+      }
+      quotes = [...quotes, ...backup];
+    } catch (err) {
+      log.debug('prices', `alpha vantage also unavailable: ${(err as Error).message}`);
+    }
+  }
+
+  if (quotes.length > 0) return quotes;
+
+  if (fixturesEnabled()) {
+    const reason = primaryErr instanceof Error ? primaryErr.message : 'no provider configured';
+    log.debug('prices', `no provider data, using fixture (${reason})`);
     return fixtureQuotes(symbols);
   }
+
+  throw primaryErr ?? new Error('no quotes from any provider');
 }
 
 export async function runPrices(): Promise<void> {

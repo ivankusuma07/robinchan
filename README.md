@@ -54,6 +54,7 @@ Keys that make the data real:
 | Variable | Enables |
 | --- | --- |
 | `FINNHUB_API_KEY` | Prices, indices, news feed, earnings calendar |
+| `ALPHAVANTAGE_API_KEY` | Backup quote source — tried only for whatever symbol Finnhub didn't return a price for, never the full list on every cycle (its free-tier quota is much tighter than Finnhub's) |
 | `SEC_EDGAR_USER_AGENT` | SEC filings (must include a reachable contact) |
 | `YOUTUBE_API_KEY` | Highlights clips only |
 | `NEXT_PUBLIC_RCHAN_ADDRESS` | $RCHAN price from DexScreener |

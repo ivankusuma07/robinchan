@@ -4,5 +4,12 @@
  * share one implementation. Re-exported here so provider modules keep their
  * local import path.
  */
-export { callProvider, fetchJson, ProviderSkipped, readHealth, healthKey } from '@robinchan/store';
+export {
+  callProvider,
+  fetchJson,
+  ProviderSkipped,
+  NonRetryableError,
+  readHealth,
+  healthKey,
+} from '@robinchan/store';
 export type { ProviderHealth } from '@robinchan/store';
