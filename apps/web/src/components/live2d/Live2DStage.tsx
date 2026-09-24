@@ -8,8 +8,8 @@ import {
   StageBackdrop,
   type StageBackgroundId,
 } from '@/components/effects/StageBackdrop';
-import { PodIcon } from '@/components/icons';
-import { CardHead, Pill, cx } from '@/components/ui';
+import { BackgroundIcon, CheckIcon, PodIcon } from '@/components/icons';
+import { Pill, cx } from '@/components/ui';
 
 import { MOODS, MOOD_GLOW, MOOD_LABEL, type Mood } from './expressions';
 import type { Live2DHandle, StageStatus } from './Live2DCanvas';
@@ -26,12 +26,18 @@ const Live2DCanvas = dynamic(() => import('./Live2DCanvas').then((m) => m.Live2D
 const BG_STORAGE_KEY = 'robinchan.stage-bg';
 
 /**
- * Live2D stage (brief §5): a full-body canvas over a selectable video
- * backdrop (`<StageBackdrop>`), inside a card, interaction held
- * until the model finishes loading, and a skeleton — not a blank screen —
- * while it waits.
+ * Live2D stage (brief §5) as the page's centrepiece: a large frame with the
+ * selectable video backdrop (`<StageBackdrop>`) filling it, the character
+ * full-body in the middle, and its controls floating over the top edge —
+ * expressions on the left, background picker on the right. Interaction is
+ * held until the model finishes loading, with a skeleton (not a blank
+ * screen) while it waits.
+ *
+ * The page floats the chat and market cards over this frame's sides on wide
+ * screens, and the composer under her feet; the canvas area is inset so the
+ * figure clears both the top controls and that composer.
  */
-export function Live2DStage() {
+export function Live2DStage({ className }: { className?: string }) {
   const handle = useRef<Live2DHandle | null>(null);
   const [status, setStatus] = useState<StageStatus>('loading');
   const [mood, setMood] = useState<Mood>('relaxed');
@@ -81,89 +87,145 @@ export function Live2DStage() {
 
   return (
     <section
-      className="card overflow-hidden transition-shadow duration-700"
+      aria-label="Robinchan stage"
+      className={cx(
+        'relative overflow-hidden rounded-card border border-border bg-surface-2 transition-shadow duration-700',
+        className,
+      )}
       style={{ boxShadow: ready ? MOOD_GLOW[mood] : undefined }}
     >
-      <CardHead
-        title="Robinchan"
-        aside={
-          <Pill tone={ready ? 'accent' : 'muted'}>
-            {status === 'loading' ? 'loading model' : ready ? MOOD_LABEL[mood] : 'static mode'}
-          </Pill>
-        }
-      />
+      <StageBackdrop active={bg} className="absolute inset-0" />
 
-      {/* Tall enough that a full-body figure still has a readable face. */}
-      <div className="relative h-[480px] bg-surface-2 sm:h-[580px]">
-        <StageBackdrop active={bg} className="absolute inset-0" />
+      {/* Canvas area. Inset from the top so her head clears the controls,
+          and on xl from the bottom so her feet clear the composer the page
+          docks there. Pixi sizes itself to this box (`resizeTo` = parent). */}
+      <div className="absolute inset-x-0 bottom-3 top-[120px] sm:top-[76px] xl:bottom-[88px]">
         {noWebGL ? (
           <StaticFallback reason={status} />
         ) : (
-          <Live2DCanvas handleRef={handle} onStatus={setStatus} className="relative h-full w-full" />
+          <Live2DCanvas handleRef={handle} onStatus={setStatus} className="h-full w-full" />
         )}
-        {status === 'loading' ? <StageSkeleton /> : null}
       </div>
+      {status === 'loading' ? <StageSkeleton /> : null}
 
-      <div className="border-t border-border-soft p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <span className="t-eyebrow">Expression</span>
-          {noWebGL ? (
-            <span className="font-mono text-[11px] text-text-3">
-              {status === 'unsupported' ? 'WebGL unavailable' : 'Model unavailable'}
-            </span>
+      <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          {!ready ? (
+            <Pill tone="muted" className="h-11 bg-bg/60 backdrop-blur-md">
+              {status === 'loading'
+                ? 'loading model'
+                : status === 'unsupported'
+                  ? 'WebGL unavailable'
+                  : 'model unavailable'}
+            </Pill>
           ) : null}
+
+          <div
+            role="group"
+            aria-label="Expression"
+            className="card-glass flex flex-wrap gap-1 rounded-full p-1"
+          >
+            {MOODS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                // Interaction is held until the model finishes loading.
+                disabled={!ready}
+                onClick={() => pick(option)}
+                aria-pressed={mood === option}
+                className={cx(
+                  'h-11 rounded-full px-4 text-[13px] transition-colors disabled:cursor-not-allowed disabled:opacity-45',
+                  mood === option && ready
+                    ? 'bg-accent text-accent-ink'
+                    : 'text-text-2 hover:bg-white/[0.06] hover:text-text',
+                )}
+              >
+                {MOOD_LABEL[option]}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {MOODS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              // Interaction is held until the model finishes loading.
-              disabled={!ready}
-              onClick={() => pick(option)}
-              aria-pressed={mood === option}
-              className={cx(
-                'min-h-[40px] rounded-full border px-4 text-[13px] transition-colors disabled:cursor-not-allowed disabled:opacity-45',
-                mood === option && ready
-                  ? 'border-accent/45 bg-accent/[0.07] text-text'
-                  : 'border-border text-text-2 hover:border-text-3 hover:text-text',
-              )}
-            >
-              {MOOD_LABEL[option]}
-            </button>
-          ))}
-        </div>
+        <BackgroundMenu value={bg} onChange={pickBg} />
+      </div>
+    </section>
+  );
+}
 
-        <div className="mb-3 mt-5">
-          <span className="t-eyebrow">Background</span>
-        </div>
+/**
+ * The background picker: a single glass button that opens a short list of
+ * the stage loops. Closes on a pick, Escape, or a click anywhere outside.
+ */
+function BackgroundMenu({
+  value,
+  onChange,
+}: {
+  value: StageBackgroundId;
+  onChange: (next: StageBackgroundId) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
-        <div className="flex flex-wrap gap-2">
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="card-glass flex h-[52px] items-center gap-2 rounded-full px-5 text-[13px] text-text transition-colors hover:border-white/25"
+      >
+        <BackgroundIcon />
+        <span className="hidden sm:inline">Background</span>
+        <span className="sr-only sm:hidden">Background</span>
+      </button>
+
+      {open ? (
+        <div
+          role="menu"
+          aria-label="Stage background"
+          className="card-glass absolute right-0 top-[calc(100%+8px)] z-10 w-[200px] p-1.5"
+        >
           {STAGE_BACKGROUNDS.map((option) => (
             <button
               key={option.id}
               type="button"
-              onClick={() => pickBg(option.id)}
-              aria-pressed={bg === option.id}
+              role="menuitemradio"
+              aria-checked={value === option.id}
+              onClick={() => {
+                onChange(option.id);
+                setOpen(false);
+              }}
               className={cx(
-                'min-h-[40px] rounded-full border px-4 text-[13px] transition-colors',
-                bg === option.id
-                  ? 'border-accent/45 bg-accent/[0.07] text-text'
-                  : 'border-border text-text-2 hover:border-text-3 hover:text-text',
+                'flex h-11 w-full items-center justify-between gap-3 rounded-panel px-3.5 text-left text-[13px] transition-colors',
+                value === option.id
+                  ? 'text-text'
+                  : 'text-text-2 hover:bg-white/[0.06] hover:text-text',
               )}
             >
               {option.label}
+              {value === option.id ? <CheckIcon className="text-accent" /> : null}
             </button>
           ))}
         </div>
-
-        <p className="mt-4 text-[12px] leading-relaxed text-text-3">
-          In M3 this expression switches on its own from chat replies. The voice button ships
-          alongside VOICEVOX in phase 2 — until then, her mouth is deliberately left idle.
-        </p>
-      </div>
-    </section>
+      ) : null}
+    </div>
   );
 }
 
@@ -197,20 +259,22 @@ function StageSkeleton() {
  * body-part cutouts, so nothing in the model package can be used as-is. Until
  * a proper static render of Zundamon is available separately, this slot gets
  * an honest placeholder — and its path stays in one place, swapped alongside
- * the model.
+ * the model. Sits on a glass pane since the stage video runs behind it.
  */
 function StaticFallback({ reason }: { reason: StageStatus }) {
   return (
-    <div className="relative flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
-      <span className="flex h-[92px] w-[92px] items-center justify-center rounded-full border border-border bg-surface text-accent">
-        <PodIcon width={38} height={38} />
-      </span>
-      <p className="max-w-[320px] text-[13px] leading-relaxed text-text-3">
-        {reason === 'unsupported'
-          ? "This browser doesn't provide WebGL, so the model can't be drawn."
-          : "The model failed to load. The asset may be incomplete, or Cubism Core couldn't be fetched."}{' '}
-        Chat and market data keep working as usual.
-      </p>
+    <div className="flex h-full items-center justify-center px-6">
+      <div className="card-glass flex max-w-[360px] flex-col items-center gap-4 p-6 text-center">
+        <span className="flex h-[92px] w-[92px] items-center justify-center rounded-full border border-border bg-surface text-accent">
+          <PodIcon width={38} height={38} />
+        </span>
+        <p className="text-[13px] leading-relaxed text-text-2">
+          {reason === 'unsupported'
+            ? "This browser doesn't provide WebGL, so the model can't be drawn."
+            : "The model failed to load. The asset may be incomplete, or Cubism Core couldn't be fetched."}{' '}
+          Chat and market data keep working as usual.
+        </p>
+      </div>
     </div>
   );
 }

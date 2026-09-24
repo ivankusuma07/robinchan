@@ -35,6 +35,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     };
   }, [drawerOpen]);
 
+  /* Routes whose content runs edge to edge instead of in the 1112px column. */
+  const fullBleed = pathname?.startsWith('/robinchan') ?? false;
+
   const current = NAV_ITEMS.find((item) =>
     item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href),
   );
@@ -113,9 +116,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         </button>
       </header>
 
-      <main id="content" className="px-5 pb-24 pt-8 lg:px-10">
-        <div className="mx-auto w-full max-w-[1112px]">{children}</div>
-      </main>
+      {fullBleed ? (
+        /* The character page's stage fills the whole content area; the page
+           re-centres its own below-the-fold sections. */
+        <main id="content" className="px-4 pb-24 pt-4">
+          {children}
+        </main>
+      ) : (
+        <main id="content" className="px-5 pb-24 pt-8 lg:px-10">
+          <div className="mx-auto w-full max-w-[1112px]">{children}</div>
+        </main>
+      )}
     </div>
   );
 }

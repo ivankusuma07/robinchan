@@ -128,7 +128,15 @@ export function Live2DCanvas({
           const rect = canvas.getBoundingClientRect();
           model.focus?.(e.clientX - rect.left, e.clientY - rect.top);
         };
-        const onPointerLeave = () => model.focus?.(-1000, -1000);
+        // Resting gaze is straight ahead at the viewer. `focusController`
+        // takes a normalized direction in [-1, 1] (0,0 = forward) and eases
+        // toward it, so she settles back rather than snapping. Don't use
+        // `model.focus()` for this: it takes a *point* and aims at it, so an
+        // off-canvas point (the old `-1000,-1000`) leaves her staring up
+        // into the top-left corner.
+        const lookForward = () => model.internalModel?.focusController?.focus(0, 0);
+        lookForward();
+        const onPointerLeave = lookForward;
         parent?.addEventListener('pointermove', onPointerMove);
         parent?.addEventListener('pointerleave', onPointerLeave);
 
@@ -194,6 +202,7 @@ type Live2DModelLike = {
   focus?: (x: number, y: number) => void;
   destroy?: () => void;
   internalModel?: {
+    focusController?: { focus: (x: number, y: number, instant?: boolean) => void };
     localTransform?: { a: number; d: number; tx: number; ty: number };
     getDrawableBounds?: (
       index: number,
@@ -258,8 +267,8 @@ function artBounds(model: Live2DModelLike): Box | null {
  *
  * Framed on the measured artwork (`artBounds`), contained like
  * `object-fit: contain` would if we could use it on a WebGL canvas: height
- * binds on the wide desktop stage, width binds once `grid-stage` collapses
- * to one column below 1280px and the card narrows. Local bounds don't change
+ * binds on the wide desktop stage, width binds on narrow screens where
+ * the stage is taller than it is wide. Local bounds don't change
  * with the model's scale, so repeated fits on resize don't compound.
  */
 function fit(model: Live2DModelLike, app: PixiAppLike): void {

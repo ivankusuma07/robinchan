@@ -2,11 +2,13 @@ import {
   ArrowLeftRight,
   ArrowRight,
   AudioLines,
+  Check,
   Bot,
   Briefcase,
   ExternalLink,
   Flame,
   Home,
+  Image as ImageGlyph,
   KeyRound,
   LayoutGrid,
   LineChart,
@@ -50,3 +52,5 @@ export const ExternalIcon = wrap(ExternalLink, 14);
 export const GridIcon = wrap(LayoutGrid, 20);
 export const ChatIcon = wrap(MessageSquareText, 20);
 export const KeyIcon = wrap(KeyRound, 20);
+export const BackgroundIcon = wrap(ImageGlyph, 16);
+export const CheckIcon = wrap(Check, 14);
