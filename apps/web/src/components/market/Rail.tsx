@@ -87,7 +87,7 @@ function formatDay(date: string): string {
 /* ------------------------------------------------------------------ */
 
 /**
- * "Sources monitored" (brief §6): eight slots in a two-column grid with real
+ * "Sources monitored" (brief §6): one slot per provider in a two-column grid with real
  * status from `/api/sources/status`. This also doubles as the diagnostic
  * panel when a feed goes down.
  */

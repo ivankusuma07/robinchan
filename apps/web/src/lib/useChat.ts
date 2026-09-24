@@ -87,11 +87,13 @@ export function useChat(pageContext: ChatPageContext, signedIn: boolean): ChatSt
         { id: pendingId, role: 'assistant', content: '', createdAt: new Date().toISOString(), pending: true },
       ]);
 
+      let reply = '';
       void streamReply({
         text: trimmed,
         pageContext,
         signal: controller.signal,
         onToken: (delta) => {
+          reply += delta;
           setMessages((prev) =>
             prev.map((m) => (m.id === pendingId ? { ...m, content: m.content + delta } : m)),
           );
@@ -100,6 +102,9 @@ export function useChat(pageContext: ChatPageContext, signedIn: boolean): ChatSt
         onDone: () => {
           setMessages((prev) => prev.map((m) => (m.id === pendingId ? { ...m, pending: false } : m)));
           setSending(false);
+          // Spoken once complete, not token by token: the stage splits it
+          // into sentences itself, and decides whether voice is on at all.
+          if (reply.trim()) expressionBus.requestSpeech(reply);
         },
         onError: (message) => {
           setMessages((prev) => prev.filter((m) => m.id !== pendingId));

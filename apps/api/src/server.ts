@@ -20,6 +20,7 @@ const { mediaRoutes } = await import('./routes/media.js');
 const { calendarRoutes } = await import('./routes/calendar.js');
 const { heatRoutes } = await import('./routes/heat.js');
 const { orderRoutes } = await import('./routes/order.js');
+const { ttsRoutes } = await import('./routes/tts.js');
 const { sourcesRoutes } = await import('./routes/sources.js');
 const { healthRoutes } = await import('./routes/health.js');
 
@@ -100,6 +101,7 @@ await app.register(mediaRoutes);
 await app.register(calendarRoutes);
 await app.register(heatRoutes);
 await app.register(orderRoutes);
+await app.register(ttsRoutes);
 await app.register(sourcesRoutes);
 await app.register(healthRoutes);
 

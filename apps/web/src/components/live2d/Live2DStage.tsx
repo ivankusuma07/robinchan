@@ -8,12 +8,19 @@ import {
   StageBackdrop,
   type StageBackgroundId,
 } from '@/components/effects/StageBackdrop';
-import { BackgroundIcon, CheckIcon, PodIcon } from '@/components/icons';
+import {
+  BackgroundIcon,
+  CheckIcon,
+  PodIcon,
+  VoiceOffIcon,
+  VoiceOnIcon,
+} from '@/components/icons';
 import { Pill, cx } from '@/components/ui';
 
 import { useExpressionBus } from './ExpressionBus';
-import { MOODS, MOOD_GLOW, MOOD_LABEL, type Mood } from './expressions';
+import { MOODS, MOOD_GLOW, MOOD_LABEL, VOICE_CREDIT, type Mood } from './expressions';
 import type { Live2DHandle, StageStatus } from './Live2DCanvas';
+import { useStageVoice, type StageVoice } from './useStageVoice';
 
 /**
  * The SDK loads dynamically with `ssr: false` so other pages' bundles don't
@@ -37,13 +44,24 @@ const BG_STORAGE_KEY = 'robinchan.stage-bg';
  * The page floats the chat and market cards over this frame's sides on wide
  * screens, and the composer under her feet; the canvas area is inset so the
  * figure clears both the top controls and that composer.
+ *
+ * `voiceEnabled` (FEATURE_VOICE) adds the voice toggle next to the
+ * background picker. Without WebGL there's no mouth to move, so the toggle
+ * is hidden along with the model (brief §5).
  */
-export function Live2DStage({ className }: { className?: string }) {
+export function Live2DStage({
+  className,
+  voiceEnabled = false,
+}: {
+  className?: string;
+  voiceEnabled?: boolean;
+}) {
   const handle = useRef<Live2DHandle | null>(null);
   const [status, setStatus] = useState<StageStatus>('loading');
   const [mood, setMood] = useState<Mood>('relaxed');
   const [bg, setBg] = useState<StageBackgroundId>('valley');
   const expressionBus = useExpressionBus();
+  const voice = useStageVoice(handle, { enabled: voiceEnabled, ready: status === 'ready' });
 
   // The picked background is a per-viewer convenience, so it lives in
   // localStorage — read after mount to keep SSR and first paint in sync, and
@@ -156,9 +174,48 @@ export function Live2DStage({ className }: { className?: string }) {
           </div>
         </div>
 
-        <BackgroundMenu value={bg} onChange={pickBg} />
+        <div className="flex shrink-0 items-start gap-2">
+          {voiceEnabled && !noWebGL ? <VoiceToggle voice={voice} disabled={!ready} /> : null}
+          <BackgroundMenu value={bg} onChange={pickBg} />
+        </div>
       </div>
+
+      {/* VOICEVOX credit, required wherever the voice is heard. Bottom-right
+          is the one corner the page never floats a card or the composer
+          over, at any width. */}
+      {voice.on ? (
+        <p
+          className={cx(
+            'absolute bottom-3 right-4 rounded-full bg-bg/80 px-2.5 py-1 font-mono text-[11px] backdrop-blur-md',
+            voice.unavailable ? 'text-down' : 'text-text-2',
+          )}
+          aria-live="polite"
+        >
+          {voice.unavailable ? 'voice unavailable right now' : VOICE_CREDIT}
+        </p>
+      ) : null}
     </section>
+  );
+}
+
+function VoiceToggle({ voice, disabled }: { voice: StageVoice; disabled: boolean }) {
+  const label = voice.on ? 'Voice on' : 'Voice off';
+  return (
+    <button
+      type="button"
+      onClick={voice.toggle}
+      disabled={disabled}
+      aria-pressed={voice.on}
+      title={voice.on ? 'Robinchan reads her replies out loud' : 'Let Robinchan read her replies out loud'}
+      className={cx(
+        'card-glass flex h-[52px] items-center gap-2 rounded-full px-5 text-[13px] transition-colors hover:border-white/25 disabled:cursor-not-allowed disabled:opacity-45',
+        voice.on ? 'text-text' : 'text-text-2',
+      )}
+    >
+      {voice.on ? <VoiceOnIcon className="text-accent" /> : <VoiceOffIcon />}
+      <span className="hidden sm:inline">{label}</span>
+      <span className="sr-only sm:hidden">{label}</span>
+    </button>
   );
 }
 

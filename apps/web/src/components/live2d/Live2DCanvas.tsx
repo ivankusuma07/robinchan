@@ -6,7 +6,15 @@ import { CUBISM_CORE_URL, MODEL_URL, MOOD_TO_EXPRESSION, type Mood } from './exp
 
 export type Live2DHandle = {
   setExpression: (mood: Mood) => void;
+  /** Plays `audio` with lip-sync; resolves when it ends or is stopped. One clip at a time — a new call cuts the previous one off. */
   speak: (audio: AudioBuffer | ArrayBuffer) => Promise<void>;
+  stopSpeaking: () => void;
+  /**
+   * Creates/resumes the AudioContext. Call from inside a click handler:
+   * some browsers (iOS Safari) only let audio start from a user gesture,
+   * and the clips themselves arrive later, after an async fetch.
+   */
+  unlockAudio: () => void;
 };
 
 export type StageStatus = 'loading' | 'ready' | 'unsupported' | 'failed';
@@ -31,6 +39,7 @@ export function Live2DCanvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const modelRef = useRef<Live2DModelLike | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const playbackRef = useRef<Playback | null>(null);
   const [, setReady] = useState(false);
 
   useImperativeHandle(
@@ -52,7 +61,13 @@ export function Live2DCanvas({
         model.expression?.(MOOD_TO_EXPRESSION[mood]);
       },
       async speak(audio) {
-        await playWithLipSync(audio, audioCtxRef, modelRef);
+        await playWithLipSync(audio, audioCtxRef, modelRef, playbackRef);
+      },
+      stopSpeaking() {
+        playbackRef.current?.stop();
+      },
+      unlockAudio() {
+        void audioContext(audioCtxRef).resume();
       },
     }),
     [],
@@ -171,6 +186,10 @@ export function Live2DCanvas({
     return () => {
       disposed = true;
       cleanupRef.current?.();
+      // Whatever is playing *now*, not at mount — so `speak()`'s promise
+      // resolves instead of hanging once the model is torn down.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      playbackRef.current?.stop();
       modelRef.current?.destroy?.();
       modelRef.current = null;
       app?.destroy?.(false, { children: true });
@@ -202,6 +221,8 @@ type Live2DModelLike = {
   focus?: (x: number, y: number) => void;
   destroy?: () => void;
   internalModel?: {
+    on?: (event: string, fn: () => void) => void;
+    off?: (event: string, fn: () => void) => void;
     focusController?: { focus: (x: number, y: number, instant?: boolean) => void };
     localTransform?: { a: number; d: number; tx: number; ty: number };
     getDrawableBounds?: (
@@ -325,38 +346,61 @@ function loadCubismCore(): Promise<void> {
   return corePromise;
 }
 
+type Playback = { stop: () => void };
+
+/**
+ * Tuned against real VOICEVOX output, which is quiet: voiced 512-sample
+ * windows measured RMS 0.036 median, 0.068 at the 80th percentile, 0.19 at
+ * peak. Below the gate counts as silence (mouth fully shut); the gain puts
+ * a typical syllable around a third open, stressed ones near fully open.
+ */
+const MOUTH_GATE = 0.01;
+const MOUTH_GAIN = 14;
+
+function audioContext(ref: { current: AudioContext | null }): AudioContext {
+  ref.current ??= new AudioContext();
+  return ref.current;
+}
+
 /**
  * Lip-sync is driven by TTS audio amplitude (brief §5). If TTS is off, this
- * method is never called and the mouth stays idle — no fake mouth animation
- * running without sound.
+ * is never called and the mouth stays with whatever the idle motion does —
+ * no fake mouth animation running without sound.
+ *
+ * The mouth is written from the model's own `beforeModelUpdate` hook, not a
+ * separate `requestAnimationFrame` loop: every Zundamon motion animates
+ * `ParamMouthOpenY` itself, and pixi-live2d-display re-applies motions and
+ * then restores the post-motion parameters each frame, so a value written
+ * from outside its update loop loses to the motion. That hook runs after
+ * motions, expressions and physics, right before the mesh is computed.
  */
 async function playWithLipSync(
   audio: AudioBuffer | ArrayBuffer,
   ctxRef: { current: AudioContext | null },
   modelRef: { current: Live2DModelLike | null },
+  playbackRef: { current: Playback | null },
 ): Promise<void> {
-  const model = modelRef.current;
-  if (!model) return;
+  const internal = modelRef.current?.internalModel;
+  if (!internal?.on || !internal.off) return;
 
-  ctxRef.current ??= new AudioContext();
-  const ctx = ctxRef.current;
+  const ctx = audioContext(ctxRef);
   if (ctx.state === 'suspended') await ctx.resume();
-
   const buffer =
     audio instanceof AudioBuffer ? audio : await ctx.decodeAudioData(audio.slice(0) as ArrayBuffer);
 
+  // One voice at a time.
+  playbackRef.current?.stop();
+
   const source = ctx.createBufferSource();
   source.buffer = buffer;
-
   const analyser = ctx.createAnalyser();
   analyser.fftSize = 512;
   source.connect(analyser);
   analyser.connect(ctx.destination);
 
-  const samples = new Uint8Array(analyser.frequencyBinCount);
-  let frame = 0;
-
-  const pump = () => {
+  const samples = new Uint8Array(analyser.fftSize);
+  let level = 0;
+  const onUpdate = () => {
     analyser.getByteTimeDomainData(samples);
     let sum = 0;
     for (const sample of samples) {
@@ -364,20 +408,37 @@ async function playWithLipSync(
       sum += centered * centered;
     }
     const rms = Math.sqrt(sum / samples.length);
-    model.internalModel?.coreModel?.setParameterValueById?.(
-      'ParamMouthOpenY',
-      Math.min(1, rms * 3.2),
-    );
-    frame = requestAnimationFrame(pump);
+    const target = Math.min(1, Math.max(0, rms - MOUTH_GATE) * MOUTH_GAIN);
+    // Opens quickly, closes a little slower: raw per-frame RMS reads as chattering.
+    level += (target - level) * (target > level ? 0.6 : 0.3);
+    internal.coreModel?.setParameterValueById?.('ParamMouthOpenY', level);
   };
 
   return new Promise<void>((resolve) => {
-    source.onended = () => {
-      cancelAnimationFrame(frame);
-      model.internalModel?.coreModel?.setParameterValueById?.('ParamMouthOpenY', 0);
-      resolve();
+    let finished = false;
+    const playback: Playback = {
+      stop: () => {
+        try {
+          source.stop();
+        } catch {
+          /* Already stopped. */
+        }
+        finish();
+      },
     };
+    function finish() {
+      if (finished) return;
+      finished = true;
+      // No need to close the mouth: once the hook is gone, the next frame
+      // falls back to whatever the motion sets.
+      internal?.off?.('beforeModelUpdate', onUpdate);
+      if (playbackRef.current === playback) playbackRef.current = null;
+      resolve();
+    }
+
+    playbackRef.current = playback;
+    source.onended = finish;
+    internal.on?.('beforeModelUpdate', onUpdate);
     source.start();
-    pump();
   });
 }

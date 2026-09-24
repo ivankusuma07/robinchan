@@ -140,6 +140,18 @@ export const chatHistoryQuery = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 
+/* ---------- voice (brief §5 lip-sync, §11 VOICEVOX) ---------- */
+
+/**
+ * One chunk of a reply to speak. Capped well below a full reply: the
+ * client splits a reply at sentence boundaries and synthesizes the next
+ * chunk while the current one plays, so the first words arrive fast
+ * instead of waiting on one long CPU synthesis.
+ */
+export const ttsBody = z.object({
+  text: z.string().trim().min(1).max(300),
+});
+
 /* ---------- watchlist (brief §5's per-user watchlist) ---------- */
 
 /**

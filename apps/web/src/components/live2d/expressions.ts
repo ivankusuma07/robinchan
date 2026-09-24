@@ -53,6 +53,13 @@ export const MOOD_GLOW: Record<Mood, string> = {
 export const MODEL_URL =
   process.env.NEXT_PUBLIC_LIVE2D_MODEL_URL ?? '/live2d/zundamon/zundamon.model3.json';
 
+/**
+ * VOICEVOX's terms require crediting the voice as "VOICEVOX:<character>"
+ * wherever it's heard. Swapped together with the API's `VOICEVOX_SPEAKER`
+ * (and the model above) if the character ever changes.
+ */
+export const VOICE_CREDIT = process.env.NEXT_PUBLIC_VOICE_CREDIT || 'VOICEVOX:ずんだもん';
+
 /** Cubism Core isn't published on npm; Live2D's official CDN is the only path. */
 export const CUBISM_CORE_URL =
   'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js';

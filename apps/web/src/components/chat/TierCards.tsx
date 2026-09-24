@@ -13,10 +13,10 @@ import { meetsTier, useTier } from '@/lib/useTier';
  * The real lock state is read from `GET /api/user/tier` (via `useTier()`,
  * backed by the SIWE session in WalletProvider.tsx). Without a signed-in
  * wallet every card is locked — the actual default state the brief
- * specifies, not a placeholder. The features themselves (voice, long-term
- * memory, custom personality) aren't built yet even for a tier that
- * qualifies; unlocking here means "the balance check passes," not "the
- * feature is live" — see design.md for what's actually shipped.
+ * specifies, not a placeholder. Voice is live (the stage's voice toggle,
+ * behind FEATURE_VOICE); long-term memory and custom personality aren't
+ * built yet even for a tier that qualifies — unlocking those means "the
+ * balance check passes," not "the feature is live."
  */
 
 type Tier = {
@@ -35,7 +35,7 @@ const TIERS: Tier[] = [
     name: 'Voice',
     tier: 'Free',
     tierId: 'free',
-    body: 'Robinchan reads out market summaries and her replies out loud, with lip-sync moving along.',
+    body: 'Robinchan reads her replies out loud in her own VOICEVOX voice, with lip-sync moving along.',
     bullets: [
       'VOICEVOX text-to-speech',
       'Lip-sync driven by audio amplitude',

@@ -116,6 +116,43 @@ Until that's settled, treat this asset as a placeholder. A copy of the original 
 
 ---
 
+## Voice (VOICEVOX)
+
+Robinchan reads her chat replies out loud in Zundamon's VOICEVOX voice, with the mouth driven by
+the audio's amplitude. Behind `FEATURE_VOICE`; off by default for each viewer — the stage's
+**Voice** toggle switches it on and the choice is remembered.
+
+Needs a self-hosted VOICEVOX engine:
+
+```bash
+docker run -d --name voicevox -p 50021:50021 voicevox/voicevox_engine:cpu-latest
+```
+
+then `VOICEVOX_ENDPOINT=http://localhost:50021` and `FEATURE_VOICE=true` in `.env`. The engine takes
+a few seconds to load its voices after starting.
+
+How it fits together:
+
+- `POST /api/tts` (wallet-gated, like chat — the Voice tier card is the free tier) takes up to 300
+  characters and returns `audio/wav`. Not in the brief's endpoint table; it was added with the
+  feature. VOICEVOX health shows on the Sources card like any other provider.
+- The client speaks each finished reply in sentence-sized chunks (`splitForSpeech` in
+  `packages/shared`), synthesizing the next chunk while the current one plays. Measured locally:
+  first words about 3s after a reply finishes, then continuous.
+- VOICEVOX is a Japanese engine. It turns most English into katakana on its own, but reads digits
+  as Japanese numbers, spells out contractions, and spells a few common words as letters. The API
+  rewrites text before synthesis (`apps/api/src/voice/voicevoxText.ts`): numbers, `%` and `$`
+  become English words, contractions are expanded, and words the engine misreads get a katakana
+  spelling. Find new misreads with `npm run probe:voice -w @robinchan/api` (needs a running
+  engine) rather than by ear. Expect a strong Japanese accent regardless — that's the engine.
+- VOICEVOX's terms require crediting the voice (`VOICEVOX:ずんだもん`); the stage shows it whenever
+  voice is on. If the character changes, change `VOICEVOX_SPEAKER`, `NEXT_PUBLIC_VOICE_CREDIT`
+  and `NEXT_PUBLIC_LIVE2D_MODEL_URL` together.
+- If the engine is down, she stays silent, the mouth stays idle, and the stage says voice is
+  unavailable (brief §5).
+
+---
+
 ## Heat, Portfolio & Trade
 
 Built from `robinchan-trade-heat-portfolio.md`, as far as the current milestones allow. Each page

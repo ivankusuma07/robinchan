@@ -62,7 +62,7 @@ export const INDEX_NAMES: Record<string, string> = {
   RCHAN: '$RCHAN / USD',
 };
 
-/** Slots in the "Sources monitored" card: the eight from brief §6, plus the LLM. */
+/** Slots in the "Sources monitored" card: the eight from brief §6, plus the LLM and VOICEVOX. */
 export const SOURCE_SLOTS: Array<Pick<SourceStatus, 'id' | 'label'>> = [
   { id: 'finnhub-quote', label: 'Finnhub — prices' },
   { id: 'finnhub-news', label: 'Finnhub — news' },
@@ -75,6 +75,7 @@ export const SOURCE_SLOTS: Array<Pick<SourceStatus, 'id' | 'label'>> = [
   // The LLM adapter's circuit breaker reports here too (brief §11). Labelled
   // by job, not vendor — the provider is configuration (LLM_PROVIDER).
   { id: 'llm', label: 'LLM — order parsing & chat' },
+  { id: 'voicevox', label: 'VOICEVOX — voice' },
 ];
 
 export const TIER_LABELS: Record<TierId, string> = {

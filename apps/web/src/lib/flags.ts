@@ -12,6 +12,8 @@ export type PageFlags = {
   heat: boolean;
   portfolio: boolean;
   trade: boolean;
+  /** Not a page — the stage's voice toggle and `POST /api/tts` (FEATURE_VOICE). */
+  voice: boolean;
 };
 
 export function pageFlags(): PageFlags {
@@ -20,5 +22,6 @@ export function pageFlags(): PageFlags {
     portfolio: process.env.FEATURE_PORTFOLIO_PAGE === 'true',
     // The Trade page has no flag of its own; it rides on FEATURE_TRADING.
     trade: process.env.FEATURE_TRADING === 'true',
+    voice: process.env.FEATURE_VOICE === 'true',
   };
 }

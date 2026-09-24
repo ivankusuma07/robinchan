@@ -18,6 +18,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Star,
+  Volume2,
+  VolumeX,
   X,
   type LucideProps,
 } from 'lucide-react';
@@ -61,3 +63,6 @@ export const CollapseSidebarIcon = wrap(PanelLeftClose, 18);
 export const ExpandSidebarIcon = wrap(PanelLeftOpen, 18);
 /** Heat row watchlist toggle. */
 export const StarIcon = wrap(Star, 16);
+/** Stage voice toggle. */
+export const VoiceOnIcon = wrap(Volume2, 16);
+export const VoiceOffIcon = wrap(VolumeX, 16);
