@@ -1,15 +1,22 @@
+import { CHAT_MOODS, type ChatMood } from '@robinchan/shared';
+
 /**
  * Expression map (brief §5): `happy`, `focused`, `alert`, `relaxed`.
  *
  * The names on the left are the product contract — used by UI buttons and
- * later triggered by LLM replies in M3. The names on the right are entries
- * inside the currently installed asset's `model3.json`. This separation is
- * what lets the model be swapped via `NEXT_PUBLIC_LIVE2D_MODEL_URL` without
- * touching page code.
+ * (now) triggered by LLM replies too, via `ExpressionBus`. The names on the
+ * right are entries inside the currently installed asset's `model3.json`.
+ * This separation is what lets the model be swapped via
+ * `NEXT_PUBLIC_LIVE2D_MODEL_URL` without touching page code.
+ *
+ * The mood set itself (`CHAT_MOODS`) lives in `@robinchan/shared` so the API
+ * can validate a chat reply's mood tag against the same list — re-exported
+ * here under this module's existing names so nothing importing `MOODS`/
+ * `Mood` from here needs to change.
  */
-export const MOODS = ['happy', 'focused', 'alert', 'relaxed'] as const;
+export const MOODS = CHAT_MOODS;
 
-export type Mood = (typeof MOODS)[number];
+export type Mood = ChatMood;
 
 export const MOOD_TO_EXPRESSION: Record<Mood, string> = {
   happy: 'exp_smile',

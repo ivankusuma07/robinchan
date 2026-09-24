@@ -1,9 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ChatHistoryMessage, ChatPageContext } from '@robinchan/shared';
+import { CHAT_MOODS, type ChatHistoryMessage, type ChatMood, type ChatPageContext } from '@robinchan/shared';
 
+import { useExpressionBus } from '@/components/live2d/ExpressionBus';
 import { API_BASE } from '@/lib/api';
+
+function isChatMood(value: string | undefined): value is ChatMood {
+  return CHAT_MOODS.includes(value as ChatMood);
+}
 
 export type ChatUiMessage = ChatHistoryMessage & { pending?: boolean };
 
@@ -31,6 +36,7 @@ export function useChat(pageContext: ChatPageContext, signedIn: boolean): ChatSt
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const expressionBus = useExpressionBus();
 
   // Load history once, right after signing in.
   useEffect(() => {
@@ -90,6 +96,7 @@ export function useChat(pageContext: ChatPageContext, signedIn: boolean): ChatSt
             prev.map((m) => (m.id === pendingId ? { ...m, content: m.content + delta } : m)),
           );
         },
+        onMood: (mood) => expressionBus.requestExpression(mood),
         onDone: () => {
           setMessages((prev) => prev.map((m) => (m.id === pendingId ? { ...m, pending: false } : m)));
           setSending(false);
@@ -101,7 +108,7 @@ export function useChat(pageContext: ChatPageContext, signedIn: boolean): ChatSt
         },
       });
     },
-    [pageContext, sending],
+    [pageContext, sending, expressionBus],
   );
 
   return { messages, loadingHistory, sending, error, send };
@@ -112,6 +119,7 @@ async function streamReply(opts: {
   pageContext: ChatPageContext;
   signal: AbortSignal;
   onToken: (delta: string) => void;
+  onMood: (mood: ChatMood) => void;
   onDone: () => void;
   onError: (message: string) => void;
 }): Promise<void> {
@@ -151,7 +159,7 @@ async function streamReply(opts: {
         const dataLine = frame.split('\n').find((l) => l.startsWith('data:'));
         if (!eventLine || !dataLine) continue;
         const event = eventLine.slice(6).trim();
-        let data: { text?: string; message?: string };
+        let data: { text?: string; message?: string; mood?: string };
         try {
           data = JSON.parse(dataLine.slice(5).trim());
         } catch {
@@ -159,6 +167,7 @@ async function streamReply(opts: {
         }
 
         if (event === 'token' && data.text) opts.onToken(data.text);
+        else if (event === 'mood' && isChatMood(data.mood)) opts.onMood(data.mood);
         else if (event === 'error') {
           settled = true;
           opts.onError(data.message ?? 'Something went wrong.');

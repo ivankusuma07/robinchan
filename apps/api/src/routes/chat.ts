@@ -5,6 +5,7 @@ import type { ChatHistoryMessage, ChatPageContext } from '@robinchan/shared';
 import { chatBody, chatHistoryQuery } from '@robinchan/shared/schemas';
 import { getDb } from '@robinchan/store';
 
+import { extractMoodTag } from '../chat/moodTag.js';
 import { describeOrder } from '../chat/orderReply.js';
 import { buildSystemPrompt } from '../chat/persona.js';
 import { streamChat, type ChatTurn } from '../llm/client.js';
@@ -158,6 +159,14 @@ async function runOrderAware(
   return orderText;
 }
 
+/**
+ * How far behind the raw delta stream `runConversation` holds its visible
+ * output back — comfortably longer than any `[[mood:X]]` tag (17 chars at
+ * most) plus surrounding whitespace, so that tag never flashes on screen
+ * mid-stream before it's recognized and stripped.
+ */
+const MOOD_TAG_HOLD_BACK = 40;
+
 async function runConversation(
   turns: ChatTurn[],
   pageContext: ChatPageContext | undefined,
@@ -165,12 +174,32 @@ async function runConversation(
   signal: AbortSignal,
 ): Promise<string> {
   const system = await buildSystemPrompt(pageContext);
+
+  let heldTail = '';
+  let flushedLen = 0;
+
   const { text } = await streamChat({
     job: 'chat',
     system,
     turns,
     signal,
-    onDelta: (delta) => send('token', { text: delta }),
+    onDelta: (delta) => {
+      heldTail += delta;
+      if (heldTail.length <= MOOD_TAG_HOLD_BACK) return;
+      const toFlush = heldTail.slice(0, heldTail.length - MOOD_TAG_HOLD_BACK);
+      heldTail = heldTail.slice(-MOOD_TAG_HOLD_BACK);
+      flushedLen += toFlush.length;
+      send('token', { text: toFlush });
+    },
   });
-  return text;
+
+  // Only now, with the full reply in hand, is it certain whether the tail
+  // held back above was (part of) a mood tag or just ordinary text that
+  // happened to be near the end — `extractMoodTag` settles it once.
+  const { visible, mood } = extractMoodTag(text);
+  const remainder = visible.slice(flushedLen);
+  if (remainder) send('token', { text: remainder });
+  if (mood) send('mood', { mood });
+
+  return visible;
 }

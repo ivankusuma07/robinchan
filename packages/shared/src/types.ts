@@ -406,3 +406,11 @@ export type ChatHistoryMessage = {
   content: string;
   createdAt: string;
 };
+
+/**
+ * The Live2D expression map (brief §5), shared so the API can validate a
+ * mood tag against the exact same set the frontend's expression buttons use
+ * (`apps/web/src/components/live2d/expressions.ts`, which re-exports this).
+ */
+export const CHAT_MOODS = ['happy', 'focused', 'alert', 'relaxed'] as const;
+export type ChatMood = (typeof CHAT_MOODS)[number];

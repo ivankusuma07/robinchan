@@ -4,6 +4,7 @@ import type { ApiEnvelope, Ticker } from '@robinchan/shared';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { TierCards } from '@/components/chat/TierCards';
 import { MarketSnapshot } from '@/components/home/MarketSnapshot';
+import { ExpressionBusProvider } from '@/components/live2d/ExpressionBus';
 import { Live2DStage } from '@/components/live2d/Live2DStage';
 import { getEnvelope, ssr } from '@/lib/api';
 
@@ -66,12 +67,14 @@ function Stage({ snapshot }: { snapshot: ApiEnvelope<Ticker[]> }) {
        fills the viewport under the 76px topbar, less the shell's 16px
        gutter above and below. */
     <div className="relative xl:h-[calc(100svh-108px)] xl:min-h-[680px]">
-      <Live2DStage className="h-[calc(100svh-108px)] min-h-[560px] xl:absolute xl:inset-0 xl:h-auto xl:min-h-0" />
+      <ExpressionBusProvider>
+        <Live2DStage className="h-[calc(100svh-108px)] min-h-[560px] xl:absolute xl:inset-0 xl:h-auto xl:min-h-0" />
 
-      <ChatPanel
-        logClassName="mt-4 h-[420px] xl:absolute xl:bottom-[92px] xl:left-4 xl:top-[84px] xl:mt-0 xl:h-auto xl:w-[300px] 2xl:w-[360px]"
-        composerClassName="mt-4 xl:absolute xl:bottom-4 xl:left-1/2 xl:mt-0 xl:w-[440px] xl:-translate-x-1/2"
-      />
+        <ChatPanel
+          logClassName="mt-4 h-[420px] xl:absolute xl:bottom-[92px] xl:left-4 xl:top-[84px] xl:mt-0 xl:h-auto xl:w-[300px] 2xl:w-[360px]"
+          composerClassName="mt-4 xl:absolute xl:bottom-4 xl:left-1/2 xl:mt-0 xl:w-[440px] xl:-translate-x-1/2"
+        />
+      </ExpressionBusProvider>
 
       <div className="mt-4 xl:absolute xl:right-4 xl:top-[84px] xl:mt-0 xl:w-[300px] 2xl:w-[360px]">
         <MarketSnapshot initial={snapshot} />

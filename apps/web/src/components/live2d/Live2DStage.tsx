@@ -11,6 +11,7 @@ import {
 import { BackgroundIcon, CheckIcon, PodIcon } from '@/components/icons';
 import { Pill, cx } from '@/components/ui';
 
+import { useExpressionBus } from './ExpressionBus';
 import { MOODS, MOOD_GLOW, MOOD_LABEL, type Mood } from './expressions';
 import type { Live2DHandle, StageStatus } from './Live2DCanvas';
 
@@ -42,6 +43,7 @@ export function Live2DStage({ className }: { className?: string }) {
   const [status, setStatus] = useState<StageStatus>('loading');
   const [mood, setMood] = useState<Mood>('relaxed');
   const [bg, setBg] = useState<StageBackgroundId>('valley');
+  const expressionBus = useExpressionBus();
 
   // The picked background is a per-viewer convenience, so it lives in
   // localStorage — read after mount to keep SSR and first paint in sync, and
@@ -69,20 +71,28 @@ export function Live2DStage({ className }: { className?: string }) {
 
   // The model boots with no expression applied at all — `mood` defaults to
   // 'relaxed' as a UI label, but nothing has told the model to actually show
-  // it yet. Apply it for real the moment the stage is ready, once.
+  // it yet. Apply it for real the moment the stage is ready, once, and hand
+  // this stage's handle to the expression bus so a chat reply elsewhere on
+  // the page can drive it too (brief §5).
   useEffect(() => {
-    if (ready) handle.current?.setExpression(mood);
+    if (!ready) return;
+    handle.current?.setExpression(mood);
+    expressionBus.registerHandle(handle.current);
+    return () => expressionBus.registerHandle(null);
     // Only ever meant to fire on the ready transition, not on every mood change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
+
+  // Keeps the button row in sync regardless of *what* triggered the change
+  // — a manual click and a chat-driven mood both flow through the bus.
+  useEffect(() => expressionBus.subscribe(setMood), [expressionBus]);
 
   const pick = (next: Mood) => {
     // Re-clicking the mood that's already showing would still clear and
     // re-push the same expression (see Live2DCanvas's `setExpression`) —
     // harmless, but skip the no-op work.
     if (next === mood) return;
-    setMood(next);
-    handle.current?.setExpression(next);
+    expressionBus.requestExpression(next);
   };
 
   return (
