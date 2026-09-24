@@ -73,3 +73,30 @@ create table if not exists watchlists (
   added_at timestamptz not null default now(),
   primary key (user_id, symbol)
 );
+
+-- ---------------------------------------------------------------------------
+-- Trade / Heat / Portfolio plan (robinchan-trade-heat-portfolio.md).
+-- Every statement is idempotent: `migrate()` replays this whole file on boot.
+-- ---------------------------------------------------------------------------
+
+-- G1: fills, from the tx receipt once the server confirms the tx. Without
+-- these, cost basis and PnL can't be computed from `qty` + `limit_price`.
+alter table orders add column if not exists fill_price numeric(30,10);
+alter table orders add column if not exists filled_qty numeric(30,10);
+alter table orders add column if not exists fee_usd    numeric(20,6);
+alter table orders add column if not exists filled_at  timestamptz;
+
+-- G2: pending/confirmed txs, open limit orders, and cancellations. The
+-- original five values are kept.
+alter table orders drop constraint if exists orders_status_check;
+alter table orders add constraint orders_status_check check (status in (
+  'parsed', 'quoted', 'signed', 'pending', 'confirmed', 'open', 'cancelled', 'failed', 'expired'
+));
+
+create index if not exists orders_user_symbol_created_idx
+  on orders (user_id, symbol, created_at);
+
+-- Heat page (plan §4): per-component notes, the news items that drove the
+-- news score, and the raw volume ratio used by the `volume` sort. Kept out
+-- of `components` so that column keeps its original three-number shape.
+alter table heat_scores add column if not exists detail jsonb;
