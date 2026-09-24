@@ -60,6 +60,8 @@ const config: Config = {
       },
       spacing: {
         sidebar: '248px',
+        /** Icon-only rail width when the sidebar is collapsed. */
+        'sidebar-collapsed': '80px',
         topbar: '76px',
         hero: '660px',
         panel: '412px',
