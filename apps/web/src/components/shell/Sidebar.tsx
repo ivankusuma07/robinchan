@@ -6,13 +6,15 @@ import { usePathname } from 'next/navigation';
 
 import { CloseIcon } from '@/components/icons';
 import { SoonBadge, cx } from '@/components/ui';
-import { NAV_ITEMS } from '@/lib/nav';
+import type { NavItem } from '@/lib/nav';
 
 export function SidebarContent({
+  items,
   onNavigate,
   /** Only set when the sidebar is used as a drawer below 1024px. */
   onClose,
 }: {
+  items: NavItem[];
   onNavigate?: () => void;
   onClose?: () => void;
 }) {
@@ -49,7 +51,7 @@ export function SidebarContent({
       <nav className="flex-1 overflow-y-auto px-4 py-5" aria-label="Main navigation">
         <p className="t-eyebrow px-2 pb-3">Navigation</p>
         <ul className="space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {items.map((item) => {
             const active =
               item.href === '/' ? pathname === '/' : (pathname?.startsWith(item.href) ?? false);
             const Icon = item.icon;
@@ -60,7 +62,7 @@ export function SidebarContent({
                   <span
                     aria-disabled="true"
                     className="flex min-h-[44px] items-center gap-3 rounded-full px-3 text-text-3"
-                    title="This page doesn't exist yet — coming in phase 2"
+                    title="This page isn't switched on yet"
                   >
                     <Icon className="shrink-0 opacity-60" />
                     <span className="flex-1 text-sm">{item.label}</span>

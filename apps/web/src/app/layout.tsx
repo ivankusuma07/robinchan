@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 
+import { Web3Providers } from '@/components/providers/WalletProvider';
+
 import './globals.css';
 
 /* Inter for both headings and body (design.md §11). Loaded once and
@@ -50,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
-        {children}
+        <Web3Providers>{children}</Web3Providers>
       </body>
     </html>
   );

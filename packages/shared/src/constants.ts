@@ -1,4 +1,4 @@
-import type { SourceStatus, TierId } from './types.js';
+import type { SourceStatus, SymbolKind, TierId } from './types.js';
 
 /** Thresholds mapping sentiment to three dot colors (brief §9). */
 export const SENTIMENT_POS = 0.15;
@@ -28,6 +28,30 @@ export const SYMBOL_NAMES: Record<string, string> = {
   RCHAN: 'Robinchan',
 };
 
+/**
+ * Symbols the heat board ranks: the watched tokenized stocks plus $RCHAN,
+ * Robinhood Chain's own token — without it the page's `rh_token` filter
+ * would always be empty.
+ */
+export const HEAT_SYMBOLS = [...WATCHED_SYMBOLS, 'RCHAN'] as const;
+
+export const SYMBOL_KIND: Record<string, SymbolKind> = {
+  RCHAN: 'rh_token',
+};
+
+export function symbolKind(symbol: string): SymbolKind {
+  return SYMBOL_KIND[symbol] ?? 'tokenized';
+}
+
+/** Symbols the Trade page accepts — anything the price worker quotes. */
+export const TRADABLE_SYMBOLS: readonly string[] = WATCHED_SYMBOLS;
+
+/** Rows per page on `/heat` (plan §4). */
+export const HEAT_PAGE_SIZE = 25;
+
+/** Rows visible without a wallet (plan §4) and with one (plan §6). */
+export const HEAT_VISIBLE_ROWS = { public: 5, wallet: 15 } as const;
+
 export const INDEX_SYMBOLS = ['SPX', 'NDX', 'DJI', 'VIX', 'RCHAN'] as const;
 
 export const INDEX_NAMES: Record<string, string> = {
@@ -38,7 +62,7 @@ export const INDEX_NAMES: Record<string, string> = {
   RCHAN: '$RCHAN / USD',
 };
 
-/** Eight slots in the "Sources monitored" card (brief §6). */
+/** Slots in the "Sources monitored" card: the eight from brief §6, plus the LLM. */
 export const SOURCE_SLOTS: Array<Pick<SourceStatus, 'id' | 'label'>> = [
   { id: 'finnhub-quote', label: 'Finnhub — prices' },
   { id: 'finnhub-news', label: 'Finnhub — news' },
@@ -48,6 +72,9 @@ export const SOURCE_SLOTS: Array<Pick<SourceStatus, 'id' | 'label'>> = [
   { id: 'youtube', label: 'YouTube embed' },
   { id: 'alphavantage', label: 'Alpha Vantage' },
   { id: 'stocktwits', label: 'StockTwits' },
+  // The LLM adapter's circuit breaker reports here too (brief §11). Labelled
+  // by job, not vendor — the provider is configuration (LLM_PROVIDER).
+  { id: 'llm', label: 'LLM — order parsing & chat' },
 ];
 
 export const TIER_LABELS: Record<TierId, string> = {
@@ -55,6 +82,14 @@ export const TIER_LABELS: Record<TierId, string> = {
   tier1: 'Tier 1',
   tier2: 'Tier 2',
   tier3: 'Tier 3',
+};
+
+/** What each tier unlocks (brief §14), cumulative — each tier includes the ones below it. */
+export const TIER_UNLOCKS: Record<TierId, string[]> = {
+  free: ['chat', 'market_read', 'heat_rounded', 'market_order'],
+  tier1: ['heat_full', 'watchlist', 'voice'],
+  tier2: ['long_memory', 'alerts'],
+  tier3: ['custom_personality', 'limit_order'],
 };
 
 /** Frontend polling intervals, milliseconds (brief §6). */
@@ -66,4 +101,5 @@ export const POLL_MS = {
   sources: 60_000,
   snapshot: 15_000,
   heat: 60_000,
+  candles: 60_000,
 } as const;

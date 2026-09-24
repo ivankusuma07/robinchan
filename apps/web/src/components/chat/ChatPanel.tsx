@@ -1,75 +1,104 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ChatPageContext } from '@robinchan/shared';
 
 import { Avatar } from '@/components/Avatar';
 import { ArrowRightIcon } from '@/components/icons';
 import { CardHead, cx } from '@/components/ui';
+import { useWallet } from '@/components/providers/WalletProvider';
+import { useChat } from '@/lib/useChat';
 
 /**
- * Chat on the `/robinchan` page (brief §5).
- *
- * This is the real chat's skeleton — a message list, composer, and a slot
- * for inserting an order card mid-conversation. The SSE connection to
- * `POST /api/chat` and server-side history only ship in M3 alongside SIWE, so
- * the composer is disabled and the reason is stated outright, rather than
- * looking active and silently failing when pressed.
+ * Chat on the `/robinchan` page (brief §5) — real chat, not the static demo
+ * on Home. Messages stream in over SSE from `POST /api/chat`; history is
+ * kept on the server (`GET /api/chat/history`), never in `localStorage`, so
+ * it's the same conversation from any device. Wallet sign-in gates it
+ * (`useWallet()`, brief §14) — connected-but-not-signed-in still reads as
+ * locked, the same distinction every other gate in the app makes.
  *
  * On the stage layout the transcript and the composer live in different
  * places — the transcript is a card floating at the stage's left, the
  * composer a bar docked bottom-centre under the character — so this renders
  * the two as siblings and the page positions each through its own
- * className. They stay one component so the M3 stream state has one owner.
+ * className. They stay one component so the chat state has one owner.
  */
 
-type Message = { id: string; role: 'user' | 'chan'; text: string };
+const INTRO_TEXT =
+  "Hi. I can read out price moves, filings, and news — and help build an order if you want one. Signing is still done from your own wallet.";
 
-const SEED: Message[] = [
-  {
-    id: 'm1',
-    role: 'chan',
-    text: "Hi. I can read out price moves, filings, and news — and help build an order if you want one. Signing is still done from your own wallet.",
-  },
-  {
-    id: 'm2',
-    role: 'chan',
-    text: 'Full chat goes live in milestone M3, once wallet connect and SIWE are wired up. In the meantime, the Market page is already populated with real data.',
-  },
-];
+const DEFAULT_CONTEXT: ChatPageContext = { page: 'robinchan' };
 
 export function ChatPanel({
   logClassName,
   composerClassName,
+  pageContext = DEFAULT_CONTEXT,
 }: {
   logClassName?: string;
   composerClassName?: string;
+  pageContext?: ChatPageContext;
 }) {
+  const wallet = useWallet();
+  const signedIn = wallet.status === 'signed-in';
+  const chat = useChat(pageContext, signedIn);
   const [draft, setDraft] = useState('');
+  const logRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: 'smooth' });
+  }, [chat.messages]);
+
+  const composerState: 'locked' | 'connecting' | 'ready' =
+    !signedIn ? 'locked' : chat.sending ? 'connecting' : 'ready';
+
+  const placeholder =
+    composerState === 'locked'
+      ? 'Connect a wallet to chat with Robinchan'
+      : composerState === 'connecting'
+        ? 'Robinchan is replying…'
+        : 'Ask about a price, a filing, or build an order';
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (composerState !== 'ready' || !draft.trim()) return;
+    chat.send(draft);
+    setDraft('');
+  };
 
   return (
     <>
       <section className={cx('card-glass flex min-h-0 flex-col', logClassName)}>
         <CardHead
           title="Conversation"
-          aside={<span className="font-mono text-[11px] text-text-3">M3</span>}
+          aside={
+            chat.loadingHistory ? (
+              <span className="font-mono text-[11px] text-text-3">loading…</span>
+            ) : null
+          }
         />
 
         <div
+          ref={logRef}
           className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4"
           role="log"
           aria-label="Message history"
         >
-          {SEED.map((message) => (
-            <Bubble key={message.id} message={message} />
+          <Bubble fromHer text={INTRO_TEXT} />
+
+          {chat.messages.map((message) => (
+            <Bubble
+              key={message.id}
+              fromHer={message.role === 'assistant'}
+              text={message.content}
+              pending={message.pending}
+            />
           ))}
 
-          {/* Streaming-token cursor: a soft accent blink, not a plain caret. */}
-          <div className="flex gap-3 pl-[47px]">
-            <span
-              className="inline-block h-[15px] w-[2px] animate-caret-blink rounded-full bg-accent-2"
-              aria-hidden
-            />
-          </div>
+          {chat.error ? (
+            <p className="pl-[47px] text-[12px] text-down" role="alert">
+              {chat.error}
+            </p>
+          ) : null}
         </div>
       </section>
 
@@ -78,7 +107,7 @@ export function ChatPanel({
           'card-glass flex items-center gap-2 rounded-full p-1.5 pl-5',
           composerClassName,
         )}
-        onSubmit={(e) => e.preventDefault()}
+        onSubmit={submit}
         aria-label="Send a message"
       >
         <label htmlFor="chat-input" className="sr-only">
@@ -88,14 +117,14 @@ export function ChatPanel({
           id="chat-input"
           type="text"
           value={draft}
-          disabled
+          disabled={composerState !== 'ready'}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Chat activates once a wallet is connected (M3)"
+          placeholder={placeholder}
           className="h-11 min-w-0 flex-1 bg-transparent text-[14px] text-text placeholder:text-text-3 focus:outline-none disabled:cursor-not-allowed"
         />
         <button
           type="submit"
-          disabled
+          disabled={composerState !== 'ready' || !draft.trim()}
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-accent-ink transition-shadow disabled:opacity-45 enabled:hover:shadow-glow-pink"
           aria-label="Send"
         >
@@ -106,12 +135,12 @@ export function ChatPanel({
   );
 }
 
-function Bubble({ message }: { message: Message }) {
-  if (message.role === 'user') {
+function Bubble({ fromHer, text, pending }: { fromHer: boolean; text: string; pending?: boolean }) {
+  if (!fromHer) {
     return (
       <div className="flex justify-end">
         <p className="max-w-[86%] rounded-[16px] rounded-br-[6px] border border-border bg-surface-2 px-3.5 py-2.5 text-[14px] leading-relaxed">
-          {message.text}
+          {text}
         </p>
       </div>
     );
@@ -121,7 +150,14 @@ function Bubble({ message }: { message: Message }) {
     <div className="flex gap-3">
       <Avatar />
       <p className="max-w-[86%] rounded-[16px] rounded-bl-[6px] border border-accent-2/40 bg-accent/20 px-3.5 py-2.5 text-[13.5px] leading-relaxed">
-        {message.text}
+        {text}
+        {/* Streaming-token cursor: a soft accent blink, not a plain caret. */}
+        {pending ? (
+          <span
+            className="ml-0.5 inline-block h-[13px] w-[2px] translate-y-[2px] animate-caret-blink rounded-full bg-accent-2"
+            aria-hidden
+          />
+        ) : null}
       </p>
     </div>
   );

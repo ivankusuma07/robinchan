@@ -1,18 +1,35 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { CalendarEvent, HeatComponents, NewsItem } from '@robinchan/shared';
+import type {
+  CalendarEvent,
+  HeatComponentKey,
+  HeatComponents,
+  NewsItem,
+} from '@robinchan/shared';
 
 import { dataDir } from './paths.js';
+
+/** What the heat page needs beyond the three numbers (plan §4). */
+export type HeatDetailData = {
+  /** Plain-language reason per component, e.g. "Volume 1.6x the 20-day average". */
+  notes: Record<HeatComponentKey, string>;
+  /** `news_items` ids that fed the news component, newest first. */
+  drivers: string[];
+  /** Raw on-chain volume ratio vs the 20-day average, for the `volume` sort. */
+  volumeRatio: number;
+};
 
 export type HeatRow = {
   symbol: string;
   score: number;
   components: HeatComponents;
   computedAt: string;
+  /** Absent on rows written before the heat page shipped. */
+  detail?: HeatDetailData;
 };
 
 export type NewsQuery = {
@@ -22,15 +39,41 @@ export type NewsQuery = {
   pinnedOnly?: boolean;
 };
 
+/** A SIWE-verified wallet (brief §14). `walletAddress` is always lowercase. */
+export type User = {
+  id: string;
+  walletAddress: string;
+  createdAt: string;
+  lastSeenAt: string;
+};
+
+/** One turn in `/api/chat`'s history (brief §5, §10 — stored server-side, not localStorage). */
+export type ChatMessage = {
+  id: string;
+  userId: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt: string;
+};
+
 export interface Db {
   migrate(): Promise<void>;
   /** Returns the count of rows that were genuinely new after dedupe. */
   upsertNews(items: NewsItem[]): Promise<number>;
   listNews(query: NewsQuery): Promise<NewsItem[]>;
+  /** Resolves heat drivers; unknown ids are skipped, order follows `ids`. */
+  getNewsByIds(ids: string[]): Promise<NewsItem[]>;
   upsertHeat(rows: HeatRow[]): Promise<void>;
   listHeat(limit: number): Promise<HeatRow[]>;
+  getHeat(symbol: string): Promise<HeatRow | null>;
   upsertCalendar(events: CalendarEvent[]): Promise<void>;
   listCalendar(limit: number): Promise<CalendarEvent[]>;
+  /** Finds the user by address, creating one on first sign-in; always touches `last_seen_at`. */
+  touchUser(walletAddress: string): Promise<User>;
+  getUserByAddress(walletAddress: string): Promise<User | null>;
+  insertChatMessage(msg: Omit<ChatMessage, 'id' | 'createdAt'>): Promise<ChatMessage>;
+  /** Oldest first — the order a transcript reads in. */
+  listChatMessages(userId: string, limit: number): Promise<ChatMessage[]>;
   /** chat_messages 30 days, news_items 90 days (brief §10). */
   pruneRetention(): Promise<void>;
   ping(): Promise<boolean>;
@@ -143,16 +186,30 @@ class PgDb implements Db {
     return res.rows.map(rowToNews);
   }
 
+  async getNewsByIds(ids: string[]): Promise<NewsItem[]> {
+    if (ids.length === 0) return [];
+    const res = await this.pool.query('select * from news_items where id = any($1)', [ids]);
+    const byId = new Map(res.rows.map((r: Record<string, unknown>) => [String(r.id), rowToNews(r)]));
+    return ids.flatMap((id) => byId.get(id) ?? []);
+  }
+
   async upsertHeat(rows: HeatRow[]): Promise<void> {
     for (const row of rows) {
       await this.pool.query(
-        `insert into heat_scores (symbol, score, components, computed_at)
-         values ($1,$2,$3,$4)
+        `insert into heat_scores (symbol, score, components, computed_at, detail)
+         values ($1,$2,$3,$4,$5)
          on conflict (symbol) do update
            set score = excluded.score,
                components = excluded.components,
-               computed_at = excluded.computed_at`,
-        [row.symbol, row.score, JSON.stringify(row.components), row.computedAt],
+               computed_at = excluded.computed_at,
+               detail = excluded.detail`,
+        [
+          row.symbol,
+          row.score,
+          JSON.stringify(row.components),
+          row.computedAt,
+          row.detail ? JSON.stringify(row.detail) : null,
+        ],
       );
     }
   }
@@ -161,12 +218,12 @@ class PgDb implements Db {
     const res = await this.pool.query('select * from heat_scores order by score desc limit $1', [
       limit,
     ]);
-    return res.rows.map((r: Record<string, unknown>) => ({
-      symbol: String(r.symbol),
-      score: Number(r.score),
-      components: r.components as HeatComponents,
-      computedAt: new Date(r.computed_at as string).toISOString(),
-    }));
+    return res.rows.map(rowToHeat);
+  }
+
+  async getHeat(symbol: string): Promise<HeatRow | null> {
+    const res = await this.pool.query('select * from heat_scores where symbol = $1', [symbol]);
+    return res.rows[0] ? rowToHeat(res.rows[0]) : null;
   }
 
   async upsertCalendar(events: CalendarEvent[]): Promise<void> {
@@ -197,6 +254,41 @@ class PgDb implements Db {
     }));
   }
 
+  async touchUser(walletAddress: string): Promise<User> {
+    const address = walletAddress.toLowerCase();
+    const res = await this.pool.query(
+      `insert into users (wallet_address)
+       values ($1)
+       on conflict (wallet_address) do update set last_seen_at = now()
+       returning *`,
+      [address],
+    );
+    return rowToUser(res.rows[0]);
+  }
+
+  async getUserByAddress(walletAddress: string): Promise<User | null> {
+    const res = await this.pool.query('select * from users where wallet_address = $1', [
+      walletAddress.toLowerCase(),
+    ]);
+    return res.rows[0] ? rowToUser(res.rows[0]) : null;
+  }
+
+  async insertChatMessage(msg: Omit<ChatMessage, 'id' | 'createdAt'>): Promise<ChatMessage> {
+    const res = await this.pool.query(
+      `insert into chat_messages (user_id, role, content) values ($1,$2,$3) returning *`,
+      [msg.userId, msg.role, msg.content],
+    );
+    return rowToChatMessage(res.rows[0]);
+  }
+
+  async listChatMessages(userId: string, limit: number): Promise<ChatMessage[]> {
+    const res = await this.pool.query(
+      `select * from chat_messages where user_id = $1 order by created_at desc limit $2`,
+      [userId, limit],
+    );
+    return res.rows.map(rowToChatMessage).reverse();
+  }
+
   async pruneRetention(): Promise<void> {
     await this.pool.query(
       "delete from chat_messages where created_at < now() - interval '30 days'",
@@ -216,6 +308,35 @@ class PgDb implements Db {
   async close(): Promise<void> {
     await this.pool.end();
   }
+}
+
+function rowToUser(r: Record<string, unknown>): User {
+  return {
+    id: String(r.id),
+    walletAddress: String(r.wallet_address),
+    createdAt: new Date(r.created_at as string).toISOString(),
+    lastSeenAt: new Date(r.last_seen_at as string).toISOString(),
+  };
+}
+
+function rowToChatMessage(r: Record<string, unknown>): ChatMessage {
+  return {
+    id: String(r.id),
+    userId: String(r.user_id),
+    role: r.role as ChatMessage['role'],
+    content: String(r.content),
+    createdAt: new Date(r.created_at as string).toISOString(),
+  };
+}
+
+function rowToHeat(r: Record<string, unknown>): HeatRow {
+  return {
+    symbol: String(r.symbol),
+    score: Number(r.score),
+    components: r.components as HeatComponents,
+    computedAt: new Date(r.computed_at as string).toISOString(),
+    ...(r.detail ? { detail: r.detail as HeatDetailData } : {}),
+  };
 }
 
 function rowToNews(r: Record<string, unknown>): NewsItem {
@@ -243,6 +364,8 @@ type FileShape = {
   news: StoredNews[];
   heat: HeatRow[];
   calendar: CalendarEvent[];
+  users: User[];
+  chatMessages: ChatMessage[];
 };
 
 class FileDb implements Db {
@@ -255,9 +378,12 @@ class FileDb implements Db {
 
   private read(): FileShape {
     try {
-      return JSON.parse(readFileSync(this.file, 'utf8')) as FileShape;
+      const data = JSON.parse(readFileSync(this.file, 'utf8')) as Partial<FileShape>;
+      // `users`/`chatMessages` are newer than this file format; old
+      // `.data/db.json` files won't have them yet.
+      return { news: [], heat: [], calendar: [], users: [], chatMessages: [], ...data };
     } catch {
-      return { news: [], heat: [], calendar: [] };
+      return { news: [], heat: [], calendar: [], users: [], chatMessages: [] };
     }
   }
 
@@ -310,6 +436,14 @@ class FileDb implements Db {
       .map(FileDb.strip);
   }
 
+  async getNewsByIds(ids: string[]): Promise<NewsItem[]> {
+    const byId = new Map(this.read().news.map((n) => [n.id, n]));
+    return ids.flatMap((id) => {
+      const hit = byId.get(id);
+      return hit ? [FileDb.strip(hit)] : [];
+    });
+  }
+
   async upsertHeat(rows: HeatRow[]): Promise<void> {
     const data = this.read();
     const bySymbol = new Map(data.heat.map((h) => [h.symbol, h]));
@@ -320,6 +454,10 @@ class FileDb implements Db {
 
   async listHeat(limit: number): Promise<HeatRow[]> {
     return this.read().heat.slice(0, limit);
+  }
+
+  async getHeat(symbol: string): Promise<HeatRow | null> {
+    return this.read().heat.find((h) => h.symbol === symbol) ?? null;
   }
 
   async upsertCalendar(events: CalendarEvent[]): Promise<void> {
@@ -337,9 +475,46 @@ class FileDb implements Db {
       .slice(0, limit);
   }
 
+  async touchUser(walletAddress: string): Promise<User> {
+    const address = walletAddress.toLowerCase();
+    const data = this.read();
+    const existing = data.users.find((u) => u.walletAddress === address);
+    const now = new Date().toISOString();
+    if (existing) {
+      existing.lastSeenAt = now;
+      this.write(data);
+      return existing;
+    }
+    const created: User = { id: randomUUID(), walletAddress: address, createdAt: now, lastSeenAt: now };
+    data.users.push(created);
+    this.write(data);
+    return created;
+  }
+
+  async getUserByAddress(walletAddress: string): Promise<User | null> {
+    const address = walletAddress.toLowerCase();
+    return this.read().users.find((u) => u.walletAddress === address) ?? null;
+  }
+
+  async insertChatMessage(msg: Omit<ChatMessage, 'id' | 'createdAt'>): Promise<ChatMessage> {
+    const data = this.read();
+    const created: ChatMessage = { id: randomUUID(), createdAt: new Date().toISOString(), ...msg };
+    data.chatMessages.push(created);
+    this.write(data);
+    return created;
+  }
+
+  async listChatMessages(userId: string, limit: number): Promise<ChatMessage[]> {
+    return this.read()
+      .chatMessages.filter((m) => m.userId === userId)
+      .slice(-limit);
+  }
+
   async pruneRetention(): Promise<void> {
+    const chatCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
     const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
     const data = this.read();
+    data.chatMessages = data.chatMessages.filter((m) => Date.parse(m.createdAt) > chatCutoff);
     data.news = data.news.filter((n) => Date.parse(n.publishedAt) > cutoff);
     this.write(data);
   }

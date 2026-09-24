@@ -1,5 +1,7 @@
 import type { FastifyInstance } from 'fastify';
-import type { MarketIndex, Ticker } from '@robinchan/shared';
+import type { Candle, MarketIndex, Ticker } from '@robinchan/shared';
+import { HEAT_SYMBOLS } from '@robinchan/shared';
+import { candleQuery, symbolParam } from '@robinchan/shared/schemas';
 import { z } from 'zod';
 
 import { ApiFailure, emptyEnvelope, envelope, readCached } from '../lib/envelope.js';
@@ -24,6 +26,32 @@ export async function marketRoutes(app: FastifyInstance): Promise<void> {
     const hit = await readCached<MarketIndex[]>('market', 'indices');
     if (!hit) return emptyEnvelope<MarketIndex[]>([]);
     return envelope(hit.data, hit);
+  });
+
+  /**
+   * OHLCV history (plan G3) for Trade's chart. Read from the worker's
+   * per-`symbol:interval` cache; an empty, stale envelope — not an error —
+   * when no provider has produced any yet, so the chart renders its empty
+   * state instead of failing.
+   */
+  app.get('/api/market/candles/:symbol', async (request) => {
+    const params = symbolParam.safeParse(request.params);
+    if (!params.success) throw new ApiFailure('BAD_REQUEST', 'invalid symbol', 400);
+    const q = candleQuery.safeParse(request.query);
+    if (!q.success) throw new ApiFailure('BAD_REQUEST', 'invalid interval or range', 400);
+
+    const { symbol } = params.data;
+    if (!(HEAT_SYMBOLS as readonly string[]).includes(symbol)) {
+      throw new ApiFailure('NOT_FOUND', `no candles for ${symbol}`, 404);
+    }
+
+    const { interval, from, to } = q.data;
+    const hit = await readCached<Candle[]>('candles', `${symbol}:${interval}`);
+    if (!hit) return emptyEnvelope<Candle[]>([]);
+    const bars = hit.data.filter(
+      (c) => (from === undefined || c.t >= from) && (to === undefined || c.t <= to),
+    );
+    return envelope(bars, hit);
   });
 
   app.get('/api/market/quote/:symbol', async (request) => {

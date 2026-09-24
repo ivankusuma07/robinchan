@@ -28,7 +28,10 @@ To populate data once without leaving the worker running continuously:
 npm run once -w @robinchan/worker
 ```
 
-Other commands: `npm run build`, `npm run typecheck`, `npm run lint`.
+Other commands: `npm run build`, `npm run typecheck`, `npm run lint`,
+`npm test -w @robinchan/shared` (cost-basis unit tests), `npm test -w @robinchan/api` (order-parse
+guard tests), and `npm run eval:parse -w @robinchan/api` — the M4 30-sentence parse target against
+the live LLM (needs `LLM_API_KEY`; exits non-zero if the target is missed).
 
 ### Without Postgres and Redis
 
@@ -65,7 +68,7 @@ id that would fail to load silently.
 
 ```
 apps/
-  web/          Next.js 15 App Router — Home, Robinchan, Market
+  web/          Next.js 15 App Router — Home, Robinchan, Market, and flag-gated Heat/Portfolio/Trade
   api/          Fastify — REST, reads from cache and database only
   worker/       Cron — pulls from providers, writes to cache and database
 packages/
@@ -110,6 +113,33 @@ Until that's settled, treat this asset as a placeholder. A copy of the original 
 
 ---
 
+## Heat, Portfolio & Trade
+
+Built from `robinchan-trade-heat-portfolio.md`, as far as the current milestones allow. Each page
+is behind a flag in the root `.env` (all `false` by default); the web app reads the `FEATURE_*`
+keys from that same file, so a page and its endpoints switch on together, and the sidebar item
+turns from "Soon" into a link.
+
+| Page | Flag | State |
+| --- | --- | --- |
+| `/heat` | `FEATURE_HEAT_PAGE` | **H1 done.** Public view: top 5, scores rounded ×10, the rest locked behind the wallet gate. Filters, sort, pagination, 7-day sparklines. |
+| `/portfolio` | `FEATURE_PORTFOLIO_PAGE` | Real layout behind the wallet gate (blurred sample). Data needs SIWE (M3). |
+| `/trade/[symbol]` | `FEATURE_TRADING` | Live chart and quote; ticket with inline validation. Quote, sign, and record need M3 + M4. |
+
+New endpoints: `GET /api/heat/full`, `GET /api/heat/:symbol`, `GET /api/market/candles/:symbol`.
+Gating is decided on the server (`apps/api/src/lib/access.ts`) — every caller is `public` until M3
+adds a session, and locked heat rows carry only their rank, never a symbol or score.
+
+Also in place for later milestones: the `orders` G1/G2 migration (fill columns, extended status),
+the cost-basis module (`packages/shared/src/portfolio/costBasis.ts`, never guesses a purchase
+price), `<WalletGate>` / `<TierGate>` / `<DataBlock>`, and the shared `<OrderHistory>`.
+
+Candles come from fixtures in `dev` only; a real OHLCV source needs the RH Chain pool addresses
+(plan G3 / open decision #8), and until then non-dev environments show an empty chart rather
+than an invented one.
+
+---
+
 ## Scope boundaries
 
 What's **not** built because it's outside M1–M2:
@@ -123,8 +153,9 @@ What's **not** built because it's outside M1–M2:
   on-chain and news per brief §13, not left at zero.
 - The buyback logging job — brief §14; not on the M2 list.
 
-What needs deciding before M3 is listed in brief §18 ($RCHAN contract address, tier thresholds,
-LLM provider).
+What needs deciding before M3 is listed in brief §18 ($RCHAN contract address, tier thresholds).
+The LLM provider is decided — DeepSeek, behind one adapter in `apps/api/src/llm/`; the order parser
+already meets the M4 30-sentence target (see `robinchan-trade-heat-portfolio.md` §5).
 
 ### Technical notes
 

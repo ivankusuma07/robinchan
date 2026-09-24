@@ -1,4 +1,4 @@
-import type { CalendarEvent, MediaClip, NewsItem } from '@robinchan/shared';
+import type { CalendarEvent, Candle, MediaClip, NewsItem } from '@robinchan/shared';
 import { SYMBOL_NAMES, WATCHED_SYMBOLS } from '@robinchan/shared';
 
 import { scoreSentiment } from '../lib/sentiment.js';
@@ -40,9 +40,9 @@ function drift(symbol: string, at = Date.now()): number {
   return x / 1.5;
 }
 
-export function fixtureQuote(symbol: string): RawQuote {
+export function fixtureQuote(symbol: string, at = Date.now()): RawQuote {
   const base = BASE_PRICES[symbol] ?? 100;
-  const changePct = Number((drift(symbol) * 2.4).toFixed(2));
+  const changePct = Number((drift(symbol, at) * 2.4).toFixed(2));
   const price = Number((base * (1 + changePct / 100)).toFixed(base < 1 ? 5 : 2));
   return {
     symbol,
@@ -53,7 +53,7 @@ export function fixtureQuote(symbol: string): RawQuote {
 }
 
 export function fixtureQuotes(symbols: readonly string[]): RawQuote[] {
-  return symbols.map(fixtureQuote);
+  return symbols.map((symbol) => fixtureQuote(symbol));
 }
 
 export function fixtureSpark(symbol: string, points = 24): number[] {
@@ -242,3 +242,60 @@ export function fixtureOnchain(symbol: string): {
 
 export const FIXTURE_SYMBOLS = WATCHED_SYMBOLS;
 export const FIXTURE_NAMES = SYMBOL_NAMES;
+
+/* ------------------------------------------------------------------ */
+/* Candles (G3)                                                        */
+/* ------------------------------------------------------------------ */
+
+/** Cheap deterministic hash → 0..1, so a given bucket always gets the same noise. */
+function unit(seed: number): number {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/**
+ * Deterministic OHLCV history ending at the current fixture price.
+ *
+ * Each bucket's shape is a function of (symbol, interval, bucket index)
+ * only, so history is stable across worker runs — a chart doesn't reshuffle
+ * every five minutes — and only the level is re-anchored so the last close
+ * sits on today's fixture quote.
+ */
+export function fixtureCandles(
+  symbol: string,
+  intervalSec: number,
+  count: number,
+  at = Date.now(),
+): Candle[] {
+  const seed = [...symbol].reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 7) % 100_000;
+  const lastBucket = Math.floor(at / 1000 / intervalSec);
+  const first = lastBucket - count + 1;
+  // Per-step volatility grows with the interval, capped so daily bars stay sane.
+  const sigma = Math.min(0.03, 0.0016 * Math.sqrt(intervalSec / 60));
+
+  const logAt = (k: number): number =>
+    Math.sin(seed * 0.013 + k * 0.021) * sigma * 3.5 +
+    Math.sin(seed * 0.071 + k * 0.137) * sigma * 1.4 +
+    (unit(seed + k * 1.7) - 0.5) * sigma * 1.2;
+
+  const anchor = Math.log(fixtureQuote(symbol, at).price) - logAt(lastBucket);
+  const priceAt = (k: number): number => Math.exp(anchor + logAt(k));
+  const decimals = (BASE_PRICES[symbol] ?? 100) < 1 ? 6 : 2;
+  const round = (n: number) => Number(n.toFixed(decimals));
+
+  const out: Candle[] = [];
+  for (let k = first; k <= lastBucket; k++) {
+    const o = priceAt(k - 1);
+    const c = priceAt(k);
+    const wick = sigma * (0.3 + unit(seed + k * 3.1));
+    out.push({
+      t: k * intervalSec,
+      o: round(o),
+      h: round(Math.max(o, c) * (1 + wick * unit(seed + k * 5.3))),
+      l: round(Math.min(o, c) * (1 - wick * unit(seed + k * 7.9))),
+      c: round(c),
+      v: Math.round(1_000 + unit(seed + k * 11.3) * 9_000 * Math.sqrt(intervalSec / 60)),
+    });
+  }
+  return out;
+}

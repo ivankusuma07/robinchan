@@ -17,8 +17,10 @@ export interface Cache {
   /** Returns the value plus its age in seconds, null if it doesn't exist at all. */
   getWithAge<T>(key: string): Promise<{ value: T; ageSec: number } | null>;
   set<T>(key: string, value: T, ttlSec: number): Promise<void>;
-  /** Delete all keys with a given prefix. */
+  /** List all keys with a given prefix. */
   keys(prefix: string): Promise<string[]>;
+  /** Delete all keys with a given prefix; returns how many were removed. */
+  delPrefix(prefix: string): Promise<number>;
   ping(): Promise<boolean>;
   close(): Promise<void>;
 }
@@ -83,6 +85,14 @@ class FileCache implements Cache {
     return Object.keys(this.read()).filter((k) => k.startsWith(prefix));
   }
 
+  async delPrefix(prefix: string): Promise<number> {
+    const data = this.read();
+    const doomed = Object.keys(data).filter((k) => k.startsWith(prefix));
+    for (const k of doomed) delete data[k];
+    if (doomed.length > 0) this.write(data);
+    return doomed.length;
+  }
+
   async ping(): Promise<boolean> {
     return true;
   }
@@ -133,6 +143,12 @@ class RedisCache implements Cache {
       found.push(...batch);
     } while (cursor !== '0');
     return found;
+  }
+
+  async delPrefix(prefix: string): Promise<number> {
+    const doomed = await this.keys(prefix);
+    if (doomed.length === 0) return 0;
+    return this.redis.del(...doomed);
   }
 
   async ping(): Promise<boolean> {

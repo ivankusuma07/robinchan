@@ -3,6 +3,7 @@
 import type { ApiEnvelope, HeatScore } from '@robinchan/shared';
 import { POLL_MS, WATCHED_SYMBOLS } from '@robinchan/shared';
 
+import { HeatBar } from '@/components/heat/HeatBar';
 import { CardHead, StaleBadge, cx } from '@/components/ui';
 import { isUnset } from '@/lib/api';
 import { useReveal } from '@/lib/useReveal';
@@ -87,36 +88,6 @@ function HeatRowEmpty({ symbol }: { symbol: string }) {
       </div>
       <div className="h-1.5 flex-1 rounded-full bg-surface-2" />
       <span className="w-[34px] shrink-0 text-right font-mono text-[13px] text-text-3">––</span>
-    </div>
-  );
-}
-
-/**
- * The bar uses a gradient keyed to score tier, not a flat color (design.md §4).
- * High scores shift toward `down` — "hot" doesn't always mean good.
- *
- * On Home, bars grow in from 0 once the card scrolls into view (design.md
- * §10) rather than appearing pre-filled — on `/market` this same component
- * would just show `grow` true immediately, no animation needed there.
- */
-function HeatBar({ score, grow, delayMs }: { score: number; grow: boolean; delayMs: number }) {
-  const pct = Math.max(3, Math.min(100, score));
-  const hot = score >= 70;
-  const warm = score >= 45;
-
-  return (
-    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
-      <div
-        className={cx(
-          'h-full rounded-full transition-[width] duration-700 ease-soft',
-          hot
-            ? 'bg-gradient-to-r from-accent to-down'
-            : warm
-              ? 'bg-gradient-to-r from-accent to-accent/55'
-              : 'bg-accent/45',
-        )}
-        style={{ width: grow ? `${pct}%` : '0%', transitionDelay: `${delayMs}ms` }}
-      />
     </div>
   );
 }

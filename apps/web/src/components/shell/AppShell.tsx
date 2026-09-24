@@ -5,16 +5,17 @@ import { usePathname } from 'next/navigation';
 
 import { MenuIcon } from '@/components/icons';
 import { Pill, PulseDot, cx } from '@/components/ui';
-import { NAV_ITEMS } from '@/lib/nav';
+import { navItems, type NavFlags } from '@/lib/nav';
 
 import { SidebarContent } from './Sidebar';
+import { WalletButton } from './WalletButton';
 
 /**
  * Shell shared by all three pages: 248px sidebar, 76px topbar (brief §3).
  * Below 1024px the sidebar becomes a drawer triggered by the hamburger in
  * the topbar.
  */
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, flags }: { children: ReactNode; flags: NavFlags }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
 
@@ -38,7 +39,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   /* Routes whose content runs edge to edge instead of in the 1112px column. */
   const fullBleed = pathname?.startsWith('/robinchan') ?? false;
 
-  const current = NAV_ITEMS.find((item) =>
+  const items = navItems(flags);
+  const current = items.find((item) =>
     item.href === '/' ? pathname === '/' : pathname?.startsWith(item.href),
   );
 
@@ -46,7 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen lg:pl-sidebar">
       {/* Sidebar stays fixed on desktop */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-sidebar border-r border-border-soft bg-surface lg:block">
-        <SidebarContent />
+        <SidebarContent items={items} />
       </aside>
 
       {/* Drawer below 1024px */}
@@ -75,6 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         >
           <SidebarContent
+            items={items}
             onNavigate={() => setDrawerOpen(false)}
             onClose={() => setDrawerOpen(false)}
           />
@@ -104,16 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           testnet
         </Pill>
 
-        {/* Wallet ships in M3 — the button already occupies its space so the
-            topbar height doesn't shift when the feature turns on. */}
-        <button
-          type="button"
-          disabled
-          title="Wallet connect ships in milestone M3"
-          className="btn-ghost h-11 px-4 text-sm"
-        >
-          Connect wallet
-        </button>
+        <WalletButton />
       </header>
 
       {fullBleed ? (

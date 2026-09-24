@@ -8,6 +8,7 @@ loadEnv({ path: join(repoRoot(), '.env'), quiet: true });
 const { runPrices } = await import('./jobs/prices.js');
 const { runNews } = await import('./jobs/news.js');
 const { runHeat } = await import('./jobs/heat.js');
+const { runCandles } = await import('./jobs/candles.js');
 const { runCalendar } = await import('./jobs/calendar.js');
 const { runChannels, runClips } = await import('./jobs/media.js');
 const { log } = await import('./lib/log.js');
@@ -32,6 +33,8 @@ const JOBS: Job[] = [
   { name: 'channels', everyMs: 10 * 60_000, run: runChannels },
   { name: 'clips', everyMs: 5 * 60_000, run: runClips },
   { name: 'calendar', everyMs: 6 * 60 * 60_000, run: runCalendar },
+  // Candles feed Trade's chart and Heat's sparklines (plan G3).
+  { name: 'candles', everyMs: 5 * 60_000, run: runCandles },
   {
     name: 'retention',
     everyMs: 12 * 60 * 60_000,
@@ -70,6 +73,9 @@ async function main(): Promise<void> {
   await Promise.all([safeRun(JOBS[0] as Job), safeRun(JOBS[3] as Job), safeRun(JOBS[4] as Job)]);
   await safeRun(JOBS[5] as Job);
   await safeRun(JOBS[2] as Job);
+  // Looked up by name: candles sits mid-list, so an index would silently
+  // start running whichever job ends up in that slot.
+  await safeRun(JOBS.find((j) => j.name === 'candles') as Job);
 
   if (once) {
     log.info('worker', '--once mode complete');

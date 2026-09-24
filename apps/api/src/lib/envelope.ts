@@ -35,6 +35,7 @@ export const FRESH_FOR: Record<string, number> = {
   heat: 600,
   media: 900,
   calendar: 7200,
+  candles: 600,
 };
 
 export type Cached<T> = { data: T; stale: boolean; asOf: string };
