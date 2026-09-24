@@ -114,7 +114,12 @@ export function SidebarContent({
                   {!collapsed ? (
                     <>
                       <span className="flex-1">{item.label}</span>
-                      <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-text-3">
+                      <span
+                        className={cx(
+                          'font-mono text-[10px] uppercase tracking-[0.1em]',
+                          active ? 'text-text-2' : 'text-text-3',
+                        )}
+                      >
                         {item.hint}
                       </span>
                     </>

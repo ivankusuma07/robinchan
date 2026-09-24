@@ -83,6 +83,7 @@ const csp = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  productionBrowserSourceMaps: true,
   transpilePackages: ['@robinchan/shared'],
   /**
    * `@robinchan/shared` is consumed as TypeScript source, and its internal

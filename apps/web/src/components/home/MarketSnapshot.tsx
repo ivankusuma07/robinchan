@@ -52,7 +52,7 @@ export function MarketSnapshot({ initial }: { initial: ApiEnvelope<Ticker[]> }) 
       </div>
 
       <div className="border-t border-border-soft p-3">
-        <Link href="/market" className="btn-ghost w-full text-sm" aria-label="Open the Market page">
+        <Link href="/market" className="btn-ghost w-full text-sm">
           View full market
           <ArrowRightIcon />
         </Link>
