@@ -55,12 +55,14 @@ Keys that make the data real:
 | --- | --- |
 | `FINNHUB_API_KEY` | Prices, indices, news feed, earnings calendar |
 | `SEC_EDGAR_USER_AGENT` | SEC filings (must include a reachable contact) |
-| `YOUTUBE_API_KEY` | Active stream id per channel and Highlights clips |
+| `YOUTUBE_API_KEY` | Highlights clips only |
 | `NEXT_PUBLIC_RCHAN_ADDRESS` | $RCHAN price from DexScreener |
 
-Without `YOUTUBE_API_KEY`, `videoId` is deliberately left empty so the frontend falls back to a
-static poster + "Open on YouTube" button — a fallback path brief §6 actually requires, not a fake
-id that would fail to load silently.
+The live broadcast card doesn't use this key at all: it embeds
+`youtube.com/embed/live_stream?channel=<channelId>`, YouTube's own parameter for "whatever is
+live on this channel right now," resolved on YouTube's end — no API key, no quota, and no
+server-side "which video id is live" lookup. If the embed itself fails to load, the frontend falls
+back to a static poster + "Open on YouTube" button.
 
 ---
 
