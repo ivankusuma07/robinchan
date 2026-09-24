@@ -131,6 +131,23 @@ docker run -d --name voicevox -p 50021:50021 voicevox/voicevox_engine:cpu-latest
 then `VOICEVOX_ENDPOINT=http://localhost:50021` and `FEATURE_VOICE=true` in `.env`. The engine takes
 a few seconds to load its voices after starting.
 
+**On a server:** the engine has no authentication, and its admin endpoints (settings, user
+dictionary) are open to anyone who can reach it. Bind it to localhost and put a reverse proxy in
+front that only forwards requests carrying a secret `X-Voice-Key` header; set the same value as
+`VOICEVOX_KEY` on the API. With Caddy:
+
+```
+voice.example.com {
+    @allowed header X-Voice-Key YOUR_KEY
+    handle @allowed {
+        reverse_proxy 127.0.0.1:50021
+    }
+    respond 403
+}
+```
+
+It's CPU-bound: synthesis time scales with cores, and the API gives each chunk 8 seconds.
+
 How it fits together:
 
 - `POST /api/tts` (wallet-gated, like chat — the Voice tier card is the free tier) takes up to 300

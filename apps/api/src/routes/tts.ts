@@ -22,8 +22,21 @@ function speaker(): number {
   return Number.isInteger(n) && n >= 0 ? n : DEFAULT_SPEAKER;
 }
 
+/**
+ * The engine has no authentication of its own, so a public one sits
+ * behind a proxy that only forwards requests carrying this key (README,
+ * Voice). Unset for a local engine on localhost.
+ */
+function keyHeader(): Record<string, string> {
+  const key = process.env.VOICEVOX_KEY;
+  return key ? { 'x-voice-key': key } : {};
+}
+
 async function voicevox(path: string, init: RequestInit): Promise<Response> {
-  const res = await fetch(`${endpoint()}${path}`, init);
+  const res = await fetch(`${endpoint()}${path}`, {
+    ...init,
+    headers: { ...keyHeader(), ...(init.headers as Record<string, string> | undefined) },
+  });
   if (res.ok) return res;
   const detail = `HTTP ${res.status} from VOICEVOX ${path.split('?')[0]}`;
   // A 4xx is a request the engine will never accept (bad speaker id, bad
