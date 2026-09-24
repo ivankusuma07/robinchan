@@ -61,10 +61,17 @@ export function relativeTime(iso: string, now: number = Date.now()): string {
   return `${day}d ago`;
 }
 
+/**
+ * UTC, not the viewer's local time zone — matching `formatDay` in
+ * `Rail.tsx`. Without a fixed zone, this renders differently on the server
+ * (whatever zone the Node process runs in) than in the browser, which is a
+ * real, confirmed cause of a React hydration text mismatch (error #418) on
+ * `/robinchan` and `/market`, the two pages that render this clock.
+ */
 export function formatClock(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '--:--:--';
-  return d.toLocaleTimeString('en-GB', { hour12: false });
+  return d.toLocaleTimeString('en-GB', { hour12: false, timeZone: 'UTC' });
 }
 
 export function formatDuration(sec: number): string {
