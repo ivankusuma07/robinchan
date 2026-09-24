@@ -4,19 +4,28 @@ import { useEffect, useRef, useState } from 'react';
 import type { ApiEnvelope, MediaChannel } from '@robinchan/shared';
 
 import { ExternalIcon } from '@/components/icons';
-import { CardHead, PulseDot, cx } from '@/components/ui';
+import { CardHead, cx } from '@/components/ui';
 import { safeUrl, sanitizeText } from '@/lib/sanitize';
 import { usePoll } from '@/lib/usePoll';
 
 /**
  * Live video broadcast (brief §6).
  *
+ * Embedded via `embed/live_stream?channel=<channelId>` — YouTube's own
+ * parameter for "whatever is live on this channel right now", resolved on
+ * YouTube's end. No API key, no `videoId` lookup, and (unlike the previous
+ * version) no waiting on the worker to resolve one: the channel id is known
+ * the moment the channel list loads, so the embed can always be attempted
+ * immediately. Whether anything is actually live is something only YouTube's
+ * player itself can tell at this point — there's no cheap, quota-free way to
+ * know in advance, so the "LIVE" badge this card used to show is gone; the
+ * embed's own state (or the fallback below, on a genuine load failure) is
+ * what's now honest to show.
+ *
  * - 16:9 slot inside a card, 352px tall
  * - The iframe only mounts once the card enters the viewport, plus `loading="lazy"`
  * - Starts muted; autoplay with sound would be blocked by the browser anyway
- * - Channel tabs swap `videoId` without a page reload
- * - If `videoId` isn't available yet or the iframe fails, show a poster +
- *   button to YouTube — `videoId` comes from the API, never hardcoded here
+ * - Channel tabs swap the embedded channel without a page reload
  */
 export function LiveVideo({ initial }: { initial: ApiEnvelope<MediaChannel[]> }) {
   const envelope = usePoll<MediaChannel[]>('/api/media/channels', initial, 10 * 60_000);
@@ -47,40 +56,45 @@ export function LiveVideo({ initial }: { initial: ApiEnvelope<MediaChannel[]> })
 
   useEffect(() => {
     setFailed(false);
-  }, [active?.videoId]);
+  }, [active?.channelId]);
 
   return (
     <section ref={cardRef} className="card overflow-hidden">
       <CardHead
         title="Live broadcast"
         aside={
-          active?.live ? (
-            <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-accent">
-              <PulseDot />
-              LIVE
-            </span>
-          ) : (
-            <span className="font-mono text-[11px] text-text-3">no active stream</span>
-          )
+          active ? (
+            <span className="font-mono text-[11px] text-text-3">via YouTube</span>
+          ) : null
         }
       />
 
-      <div className="flex h-[352px] items-center justify-center bg-black">
-        {active && active.videoId && visible && !failed ? (
+      {/*
+        The box itself is 16:9 (`aspect-video` on the box, not a fixed
+        height) so the iframe can just fill it edge to edge — a fixed
+        352px height forced a width from `aspect-video` on the *iframe*
+        that didn't match the card's actual (responsive) width, and
+        `max-w-full` then only capped the width without giving the height
+        back, which is what was letterboxing the real video inside it.
+      */}
+      <div className="relative aspect-video w-full bg-black">
+        {!active ? (
+          <EmptyState visible={channels.length > 0} />
+        ) : failed ? (
+          <Poster channel={active} />
+        ) : visible ? (
           <iframe
-            key={active.videoId}
+            key={active.channelId}
             // youtube-nocookie + mute=1: autoplay with sound would be blocked anyway.
-            src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(active.videoId)}?autoplay=1&mute=1&playsinline=1&rel=0`}
+            src={`https://www.youtube-nocookie.com/embed/live_stream?channel=${encodeURIComponent(active.channelId)}&autoplay=1&mute=1&playsinline=1&rel=0`}
             title={`Live broadcast: ${sanitizeText(active.label, 40)}`}
             loading="lazy"
             allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
             onError={() => setFailed(true)}
-            className="aspect-video h-full w-auto max-w-full border-0"
+            className="absolute inset-0 h-full w-full border-0"
           />
-        ) : (
-          <Poster channel={active} />
-        )}
+        ) : null}
       </div>
 
       <div
@@ -109,7 +123,6 @@ export function LiveVideo({ initial }: { initial: ApiEnvelope<MediaChannel[]> })
                     : 'border-border text-text-2 hover:border-text-3 hover:text-text',
                 )}
               >
-                {channel.live ? <PulseDot /> : null}
                 {sanitizeText(channel.label, 24)}
               </button>
             );
@@ -120,17 +133,27 @@ export function LiveVideo({ initial }: { initial: ApiEnvelope<MediaChannel[]> })
   );
 }
 
+/** The card scrolled into view state, before the channel list has loaded — a quiet placeholder, not an error. */
+function EmptyState({ visible }: { visible: boolean }) {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-surface-2">
+      {visible ? (
+        <span className="font-mono text-[11px] text-text-3">loading channels…</span>
+      ) : null}
+    </div>
+  );
+}
+
 function Poster({ channel }: { channel: MediaChannel | null }) {
   const href = channel ? safeUrl(channel.url) : null;
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-surface-2 px-6 text-center">
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-surface-2 px-6 text-center">
       <p className="font-mono text-[12px] uppercase tracking-[0.12em] text-text-3">
-        stream couldn&apos;t load
+        embed couldn&apos;t load
       </p>
       <p className="max-w-[360px] text-[13px] leading-relaxed text-text-3">
-        The provider hasn&apos;t confirmed an active stream id yet. The channel can still be opened
-        directly.
+        The channel can still be opened directly.
       </p>
       {href ? (
         <a

@@ -66,10 +66,14 @@ export type NewsItem = {
 export type MediaChannel = {
   id: string;
   label: string;
-  /** Empty when an active stream can't be confirmed — frontend falls back to a poster. */
-  videoId: string;
-  live: boolean;
-  /** Target of the 'Open on YouTube' button when the iframe can't load. */
+  /**
+   * Embedded via `embed/live_stream?channel=<channelId>` — YouTube's own
+   * official parameter for "whatever is live on this channel right now",
+   * resolved on YouTube's own end. No API key, no quota, and no server-side
+   * "which video id is currently live" lookup needed at all.
+   */
+  channelId: string;
+  /** Target of the 'Open on YouTube' button if the embed itself fails to load. */
   url: string;
 };
 

@@ -3,14 +3,23 @@ import type { MediaChannel, MediaClip } from '@robinchan/shared';
 import { callProvider, fetchJson } from './adapter.js';
 
 /**
- * 24-hour streams sometimes get swapped out by their owners, so `videoId`
- * must never be hardcoded on the frontend (brief §6). The worker resolves
- * it from a channelId via the YouTube Data API.
+ * Channel list for the "Live broadcast" card (brief §6).
  *
- * Without `YOUTUBE_API_KEY`, `videoId` is deliberately left empty so the
- * frontend falls back to a static poster + "Open on YouTube" button — a
- * fallback path the brief actually requires, not a fake id that would fail
- * to load silently.
+ * This used to resolve each channel's currently-live `videoId` through the
+ * YouTube Data API's `search.list` (100 quota units per call, against a
+ * 10,000/day default quota — four channels, polled every 10 minutes, is
+ * ~57,600 units/day on its own) and then embedded that specific video.
+ * That's gone: `embed/live_stream?channel=<channelId>` is YouTube's own
+ * documented iframe parameter for "whatever is live on this channel right
+ * now" — no video id lookup needed, resolved on YouTube's end, no API key,
+ * no quota. The frontend builds that URL directly from `channelId`
+ * (`LiveVideo.tsx`).
+ *
+ * `fetchChannels()` is consequently a static list, not a provider call —
+ * there's nothing left here that can fail or go stale. `fetchClips()`
+ * below is a separate feature (recent uploads for "Highlights") and still
+ * genuinely needs the Data API, since a title/thumbnail/publish-date list
+ * isn't something YouTube's embed alone can give us.
  */
 const CHANNELS: Array<{
   id: string;
@@ -57,39 +66,19 @@ function channelUrl(handle: string): string {
   return `https://www.youtube.com/@${handle}/streams`;
 }
 
+/**
+ * Static — see the module doc comment for why. Still a function (not a
+ * constant export) so the worker's `runChannels` job has something to call
+ * on schedule; that job is what writes it to the cache the API serves from,
+ * unchanged from before.
+ */
 export async function fetchChannels(): Promise<MediaChannel[]> {
-  const apiKey = process.env.YOUTUBE_API_KEY || undefined;
-
-  const offline: MediaChannel[] = CHANNELS.map((c) => ({
+  return CHANNELS.map((c) => ({
     id: c.id,
     label: c.label,
-    videoId: '',
-    live: false,
+    channelId: c.channelId,
     url: channelUrl(c.handle),
   }));
-
-  try {
-    return await callProvider({ id: 'youtube', configured: Boolean(apiKey) }, async () => {
-      const resolved: MediaChannel[] = [];
-      for (const c of CHANNELS) {
-        const body = await fetchJson<SearchResponse>(
-          `${SEARCH}?part=snippet&channelId=${c.channelId}&eventType=live&type=video&maxResults=1&key=${apiKey}`,
-        );
-        const videoId = body.items?.[0]?.id?.videoId ?? '';
-        resolved.push({
-          id: c.id,
-          label: c.label,
-          videoId,
-          live: Boolean(videoId),
-          url: videoId ? `https://www.youtube.com/watch?v=${videoId}` : channelUrl(c.handle),
-        });
-      }
-      return resolved;
-    });
-  } catch {
-    // The channel list still comes back; only the active stream id is missing.
-    return offline;
-  }
 }
 
 export async function fetchClips(): Promise<MediaClip[]> {
