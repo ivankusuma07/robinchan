@@ -158,12 +158,12 @@ export function ClosingCta() {
         className="pointer-events-none absolute inset-x-0 top-0 h-[280px] opacity-50"
         style={{
           background:
-            'radial-gradient(60% 100% at 50% 0%, rgba(123,224,123,0.16) 0%, rgba(123,224,123,0) 70%)',
+            'radial-gradient(60% 100% at 50% 0%, rgba(212,244,80,0.55) 0%, rgba(212,244,80,0) 70%)',
         }}
       />
       <div className="relative">
         <h2 className="t-section mx-auto max-w-[18ch]">
-          Your keys. Your signature. <span className="text-accent">Your call.</span>
+          Your keys. Your signature. <span className="text-accent-gradient">Your call.</span>
         </h2>
         <p className="t-lead mx-auto mt-6 max-w-[520px]">
           Read the market with a companion who explains it, then sign the order yourself. Nothing

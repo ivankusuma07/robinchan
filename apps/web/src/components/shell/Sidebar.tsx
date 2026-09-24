@@ -22,14 +22,14 @@ export function SidebarContent({
     <div className="flex h-full flex-col">
       <div className="flex h-topbar shrink-0 items-center gap-2.5 border-b border-border-soft px-6">
         <Image
-          src="/img/navbar_icon.png"
+          src="/img/logo.jpg"
           alt=""
           aria-hidden
           width={32}
           height={32}
           priority
           quality={95}
-          className="h-8 w-8"
+          className="h-8 w-8 rounded-[8px]"
         />
         <span className="flex-1 font-display text-[15px] font-semibold tracking-[0.01em]">
           Robinchan
@@ -79,7 +79,7 @@ export function SidebarContent({
                   className={cx(
                     'flex min-h-[44px] items-center gap-3 rounded-full px-3 text-sm transition-colors',
                     active
-                      ? 'border border-accent/45 bg-accent/[0.07] text-text shadow-glow-accent'
+                      ? 'border border-accent-2/70 bg-accent/35 text-text shadow-glow-accent'
                       : 'border border-transparent text-text-2 hover:border-border hover:bg-surface hover:text-text',
                   )}
                 >

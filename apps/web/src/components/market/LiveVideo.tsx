@@ -105,7 +105,7 @@ export function LiveVideo({ initial }: { initial: ApiEnvelope<MediaChannel[]> })
                 className={cx(
                   'inline-flex min-h-[36px] items-center gap-2 rounded-full border px-3.5 text-[13px] transition-colors',
                   isActive
-                    ? 'border-accent/45 bg-accent/[0.07] text-text'
+                    ? 'border-accent-2/70 bg-accent/35 text-text'
                     : 'border-border text-text-2 hover:border-text-3 hover:text-text',
                 )}
               >

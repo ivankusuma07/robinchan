@@ -28,7 +28,7 @@ export function Sparkline({
     return `${x.toFixed(2)},${y.toFixed(2)}`;
   });
 
-  const stroke = tone === 'up' ? '#6EE787' : tone === 'down' ? '#FF8080' : '#6E6E6E';
+  const stroke = tone === 'up' ? '#22C55E' : tone === 'down' ? '#EF4444' : '#9AA3B8';
   const gradientId = `spark-${tone}`;
 
   return (

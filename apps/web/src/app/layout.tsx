@@ -1,16 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Instrument_Sans, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 
 import './globals.css';
 
-const display = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-display',
-  display: 'swap',
-  weight: ['500', '600', '700'],
-});
-
-const body = Instrument_Sans({
+/* Inter for both headings and body (design.md §11). Loaded once and
+   exposed under both variables so the display/body split in the Tailwind
+   config — and every `font-display` call site — keeps working. */
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-body',
   display: 'swap',
@@ -40,13 +36,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0A0A0A',
-  colorScheme: 'dark',
+  themeColor: '#F8FAF6',
+  colorScheme: 'light',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${mono.variable}`}>
       <body>
         <a
           href="#content"

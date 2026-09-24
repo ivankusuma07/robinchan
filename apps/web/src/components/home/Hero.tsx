@@ -34,7 +34,7 @@ export function Hero({ snapshot }: { snapshot: ApiEnvelope<Ticker[]> }) {
         {/* `text-on-media` on the copy that sits over the video plate — the
             badge, headline and lead. It buys contrast at the glyph edge so
             the backdrop doesn't have to be darkened to compensate. */}
-        <p className="pill mb-7 animate-hero-in border-accent/35 bg-bg/40 font-mono text-accent backdrop-blur-sm [animation-delay:0ms]">
+        <p className="pill mb-7 animate-hero-in border-accent-2/70 bg-bg/40 font-mono text-accent backdrop-blur-sm [animation-delay:0ms]">
           <PulseDot />
           Live on Robinhood Chain
         </p>
@@ -44,7 +44,7 @@ export function Hero({ snapshot }: { snapshot: ApiEnvelope<Ticker[]> }) {
           <br />
           Talk it through.
           <br />
-          <span className="text-accent">Sign it yourself.</span>
+          <span className="text-accent-gradient">Sign it yourself.</span>
         </h1>
 
         <div className="grid-hero items-start">

@@ -80,7 +80,7 @@ function Bubble({ turn }: { turn: Turn }) {
       <Avatar />
       <p
         className={cx(
-          'max-w-[78%] rounded-[16px] rounded-bl-[6px] border border-accent/20 bg-accent/[0.05]',
+          'max-w-[78%] rounded-[16px] rounded-bl-[6px] border border-accent-2/40 bg-accent/20',
           'px-4 py-2.5 text-[14px] leading-relaxed text-text',
         )}
       >

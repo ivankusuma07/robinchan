@@ -37,10 +37,10 @@ export const MOOD_LABEL: Record<Mood, string> = {
  * signal.
  */
 export const MOOD_GLOW: Record<Mood, string> = {
-  happy: '0 0 34px rgba(123, 224, 123, 0.20)',
-  focused: '0 0 22px rgba(123, 224, 123, 0.12)',
-  alert: '0 0 30px rgba(255, 182, 193, 0.16)',
-  relaxed: '0 0 18px rgba(123, 224, 123, 0.07)',
+  happy: '0 0 34px rgba(163, 230, 53, 0.45)',
+  focused: '0 0 22px rgba(163, 230, 53, 0.3)',
+  alert: '0 0 30px rgba(249, 168, 190, 0.45)',
+  relaxed: '0 0 18px rgba(163, 230, 53, 0.2)',
 };
 
 export const MODEL_URL =

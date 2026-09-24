@@ -137,7 +137,7 @@ export function Live2DStage({ className }: { className?: string }) {
                   'h-11 rounded-full px-4 text-[13px] transition-colors disabled:cursor-not-allowed disabled:opacity-45',
                   mood === option && ready
                     ? 'bg-accent text-accent-ink'
-                    : 'text-text-2 hover:bg-white/[0.06] hover:text-text',
+                    : 'text-text-2 hover:bg-text/[0.06] hover:text-text',
                 )}
               >
                 {MOOD_LABEL[option]}
@@ -216,7 +216,7 @@ function BackgroundMenu({
                 'flex h-11 w-full items-center justify-between gap-3 rounded-panel px-3.5 text-left text-[13px] transition-colors',
                 value === option.id
                   ? 'text-text'
-                  : 'text-text-2 hover:bg-white/[0.06] hover:text-text',
+                  : 'text-text-2 hover:bg-text/[0.06] hover:text-text',
               )}
             >
               {option.label}

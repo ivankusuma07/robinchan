@@ -47,7 +47,7 @@ export function NewsFeed({ initial }: { initial: ApiEnvelope<NewsItem[]> }) {
             className={cx(
               'rounded-full border px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors',
               filter === cat
-                ? 'border-accent/45 bg-accent/[0.07] text-text'
+                ? 'border-accent-2/70 bg-accent/35 text-text'
                 : 'border-border text-text-3 hover:border-text-3 hover:text-text-2',
             )}
           >

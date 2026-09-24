@@ -50,14 +50,14 @@ export function LandingHeader() {
       <div className="page-container flex h-[76px] items-center gap-4 px-5 lg:px-10">
         <Link href="/" className="flex items-center gap-2.5">
           <Image
-            src="/img/navbar_icon.png"
+            src="/img/logo.jpg"
             alt=""
             aria-hidden
             width={36}
             height={36}
             priority
             quality={95}
-            className="h-9 w-9"
+            className="h-9 w-9 rounded-[9px]"
           />
           <span className="font-display text-[16px] font-semibold tracking-[0.01em]">
             Robinchan

@@ -59,7 +59,7 @@ export function Pill({
 }) {
   const tones = {
     neutral: 'border-border text-text-2',
-    accent: 'border-accent/40 text-accent',
+    accent: 'border-accent-2/70 text-accent',
     muted: 'border-border-soft text-text-3',
     pink: 'border-companion-pink/35 text-companion-pink',
   } as const;

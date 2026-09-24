@@ -10,7 +10,7 @@ import { safeUrl, sanitizeText } from '@/lib/sanitize';
 const CAT_TONE: Record<NewsItem['cat'], string> = {
   SEC: 'border-border text-text',
   NEWS: 'border-border text-text-2',
-  CHAIN: 'border-accent/35 text-accent',
+  CHAIN: 'border-accent-2/70 text-accent',
   SOCIAL: 'border-border-soft text-text-3',
 };
 

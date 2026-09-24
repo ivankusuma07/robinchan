@@ -66,7 +66,7 @@ export function ChatPanel({
           {/* Streaming-token cursor: a soft accent blink, not a plain caret. */}
           <div className="flex gap-3 pl-[47px]">
             <span
-              className="inline-block h-[15px] w-[2px] animate-caret-blink rounded-full bg-accent"
+              className="inline-block h-[15px] w-[2px] animate-caret-blink rounded-full bg-accent-2"
               aria-hidden
             />
           </div>
@@ -120,7 +120,7 @@ function Bubble({ message }: { message: Message }) {
   return (
     <div className="flex gap-3">
       <Avatar />
-      <p className="max-w-[86%] rounded-[16px] rounded-bl-[6px] border border-accent/20 bg-accent/[0.05] px-3.5 py-2.5 text-[13.5px] leading-relaxed">
+      <p className="max-w-[86%] rounded-[16px] rounded-bl-[6px] border border-accent-2/40 bg-accent/20 px-3.5 py-2.5 text-[13.5px] leading-relaxed">
         {message.text}
       </p>
     </div>

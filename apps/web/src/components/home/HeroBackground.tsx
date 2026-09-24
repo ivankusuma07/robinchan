@@ -32,19 +32,21 @@ export function HeroBackground() {
       src="/video/hero.mp4"
       poster="/video/hero-poster.jpg"
       className="absolute inset-0 -z-10"
-      filter="brightness(0.62) saturate(0.75) contrast(1.06) blur(2px)"
+      /* Light theme: the footage is lifted and desaturated toward the page's
+         sage, and the scrim washes it *light* (not dark) so the dark
+         headline reads over it — the same left/down weighting as before,
+         inverted. */
+      filter="brightness(1.08) saturate(0.6) contrast(0.92) blur(2px)"
       scrim={[
         /* Brand cast over the top edge. */
-        'radial-gradient(100% 70% at 50% 0%, rgba(123, 224, 123, 0.10), transparent 62%)',
+        'radial-gradient(100% 70% at 50% 0%, rgba(212, 244, 80, 0.22), transparent 62%)',
         /* Protects the left text column, releases the right. */
-        'linear-gradient(to right, rgba(10,10,10,0.62) 0%, rgba(10,10,10,0.34) 42%, rgba(10,10,10,0.08) 70%, rgba(10,10,10,0) 100%)',
-        /* Holds the top open, then takes the bright floor down and resolves
-           to flat background so the next section starts on solid color.
-           The ramp is eased over the whole lower half rather than snapping
-           shut in the last ~20% — a short, steep ramp reads as a dark band
-           sitting on the seam instead of the footage dissolving into the
-           page. Pairs with the top mask on `<AmbientField>`. */
-        'linear-gradient(to bottom, rgba(10,10,10,0.18) 0%, rgba(10,10,10,0.28) 40%, rgba(10,10,10,0.42) 55%, rgba(10,10,10,0.58) 68%, rgba(10,10,10,0.74) 79%, rgba(10,10,10,0.87) 88%, rgba(10,10,10,0.96) 95%, #0A0A0A 100%)',
+        'linear-gradient(to right, rgba(248,250,246,0.9) 0%, rgba(248,250,246,0.72) 42%, rgba(248,250,246,0.4) 70%, rgba(248,250,246,0.25) 100%)',
+        /* Eases the footage out over the lower half and resolves to the
+           flat page background, so the next section starts on solid color
+           with no band at the seam. Pairs with the top mask on
+           `<AmbientField>`. */
+        'linear-gradient(to bottom, rgba(248,250,246,0.1) 0%, rgba(248,250,246,0.2) 40%, rgba(248,250,246,0.38) 55%, rgba(248,250,246,0.56) 68%, rgba(248,250,246,0.72) 79%, rgba(248,250,246,0.86) 88%, rgba(248,250,246,0.96) 95%, #F8FAF6 100%)',
       ].join(', ')}
       playbackRate={0.5}
     />
