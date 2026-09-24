@@ -1,3 +1,5 @@
+import type { OutgoingHttpHeaders } from 'node:http';
+
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ChatHistoryMessage, ChatPageContext } from '@robinchan/shared';
 import { chatBody, chatHistoryQuery } from '@robinchan/shared/schemas';
@@ -84,12 +86,24 @@ export async function chatRoutes(app: FastifyInstance): Promise<void> {
 
       await db.insertChatMessage({ userId: session.userId, role: 'user', content: text });
 
+      // CORS (and HSTS from helmet) are queued onto the Fastify `reply` by
+      // earlier onRequest hooks, not written to the raw response until
+      // Fastify's normal send path runs. hijack() skips that path — a raw
+      // `res.writeHead()` with only our own headers silently drops them,
+      // which is exactly what broke cross-site chat requests from the
+      // browser (CORS blocks a response with no Access-Control-Allow-Origin,
+      // even though the server was never rejecting the request itself).
+      // Reading whatever's already queued, before hijacking, is what keeps
+      // them.
+      const inheritedHeaders = reply.getHeaders() as OutgoingHttpHeaders;
+
       // Fastify's own reply lifecycle (serialization, onSend hooks) doesn't
       // fit a hand-written SSE stream — hijack() hands the raw response
       // over, so nothing else tries to write to it after this point.
       reply.hijack();
       const res = reply.raw;
       res.writeHead(200, {
+        ...inheritedHeaders,
         'content-type': 'text/event-stream',
         'cache-control': 'no-cache, no-transform',
         connection: 'keep-alive',
